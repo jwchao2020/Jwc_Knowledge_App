@@ -1,0 +1,48 @@
+name: 📱 Build Android APK
+
+on:
+  # 当推送到 main 分支时触发
+  push:
+    branches:
+      - main
+  # 允许在网页上手动点击按钮触发
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: ⬇️ 1. 拉取代码
+        uses: actions/checkout@v3
+
+      - name: 🟢 2. 设置 Node.js 环境
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: ☕ 3. 设置 Java 环境 (JDK 17)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📦 4. 安装依赖
+        run: npm install
+
+      - name: 🔧 5. 初始化安卓环境
+        # 这一步会自动生成 android 文件夹，完全不需要本地有
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: 🔨 6. 打包 APK
+        working-directory: ./android
+        # 使用 Gradle 打包 Debug 版本 (免签名，安装方便)
+        run: ./gradlew assembleDebug
+
+      - name: 📤 7. 上传 APK 到 GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: Jwc-Knowledge-App
+          path: android/app/build/outputs/apk/debug/app-debug.apk

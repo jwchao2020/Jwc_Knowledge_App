@@ -1,0 +1,13 @@
+{
+  "name": "jwc-knowledge-app",
+  "version": "1.0.0",
+  "description": "Jwc Knowledge Base App",
+  "scripts": {
+    "build": "echo 'No build script needed for static files'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0"
+  }
+}
