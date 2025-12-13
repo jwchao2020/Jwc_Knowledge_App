@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jwc 知识库</title>
+    <style>
+        /* ... (保留之前的样式) ... */
+        body { font-family: -apple-system, sans-serif; background: #f5f5f5; margin: 0; }
+        header { background: #007bff; color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center;}
+        .status-badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.2); }
+        .node { background: white; border-bottom: 1px solid #eee; }
+        .node-title { padding: 15px; display: flex; align-items: center; cursor: pointer; }
+        .icon { margin-right: 10px; }
+        .text { flex: 1; color: #333; text-decoration: none;}
+        .children { display: none; padding-left: 20px; background: #fafafa; }
+        .children.show { display: block; }
+        a { text-decoration: none; color: inherit; display: flex; width: 100%; align-items: center;}
+    </style>
+</head>
+<body>
+
+<header>
+    <span>📚 知识库</span>
+    <span id="status" class="status-badge">检测中...</span>
+</header>
+<div id="app"></div>
+
+<script src="data.js"></script>
+
+<script>
+    // === 配置区域 ===
+    // ⚠️重要：把下面的地址换成你 Gitee 仓库 data.js 的 Raw 地址
+    // 格式通常是: https://gitee.com/用户名/仓库名/raw/master/Documents/data.js
+    // === 配置区域 (已针对你的仓库优化) ===
+    // 仓库地址: https://gitee.com/jystarx/aigent
+    
+    // 1. data.js 的原始数据地址 (注意：假设你的主分支叫 master)
+    const GITEE_DATA_URL = 'https://gitee.com/jystarx/aigent/raw/master/Documents/data.js';
+    
+    // 2. PDF 文件的根目录地址
+    const GITEE_PDF_ROOT = 'https://gitee.com/jystarx/aigent/raw/master/Documents/';
+
+    const app = document.getElementById('app');
+    const statusLabel = document.getElementById('status');
+    let useOnline = false;
+
+    // 渲染函数
+    function renderTree(nodes, container, isRoot = false) {
+        if(isRoot) container.innerHTML = ''; // 清空旧内容
+        
+        nodes.forEach(node => {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'node';
+
+            if (node.pdf) {
+                // === 关键点：动态决定 PDF 路径 ===
+                // 如果是在线模式，拼装 Gitee 地址；如果是离线，用相对地址
+                let pdfPath = node.pdf;
+                if (useOnline) {
+                    // node.pdf 原始值类似 "docs_pdf/folder/file.pdf"
+                    // 我们直接拼接到 Gitee 根路径后面
+                    pdfPath = GITEE_PDF_ROOT + node.pdf;
+                }
+                
+                nodeDiv.innerHTML = `
+                    <div class="node-title">
+                        <a href="${pdfPath}">
+                            <span class="icon">📄</span>
+                            <span class="text">${node.title}</span>
+                        </a>
+                    </div>
+                `;
+            } else {
+                // 文件夹逻辑 (保持不变)
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'node-title';
+                titleDiv.innerHTML = `<span class="icon">📂</span><span class="text">${node.title}</span>`;
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children';
+                
+                titleDiv.onclick = () => {
+                    childrenContainer.classList.toggle('show');
+                };
+                
+                nodeDiv.appendChild(titleDiv);
+                nodeDiv.appendChild(childrenContainer);
+                if (node.children) renderTree(node.children, childrenContainer);
+            }
+            container.appendChild(nodeDiv);
+        });
+    }
+
+    // 初始化检查
+    async function init() {
+        try {
+            // 1. 先加载本地数据兜底
+            if (typeof LOCAL_DATA !== 'undefined') {
+                renderTree(LOCAL_DATA.tree, app, true);
+                statusLabel.innerText = "离线模式 (v" + LOCAL_DATA.version + ")";
+            }
+
+            // 2. 尝试请求云端数据
+            console.log("正在检查更新...");
+            const response = await fetch(GITEE_DATA_URL);
+            if (!response.ok) throw new Error("网络不可达");
+
+            // 解析云端 JS (因为它是一个 js 文件不是 json，我们需要提取对象)
+            const scriptText = await response.text();
+            // 这是一个简单的 hack，通过执行字符串里的 JSON 部分来获取对象
+            // 假设文件内容是: const LOCAL_DATA = { ... };
+            const jsonStr = scriptText.substring(scriptText.indexOf('{'), scriptText.lastIndexOf('}') + 1);
+            const remoteData = JSON.parse(jsonStr);
+
+            // 3. 版本对比
+            const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version) : 0;
+            const remoteVer = Number(remoteData.version);
+
+            if (remoteVer > localVer) {
+                console.log("发现新版本，切换到在线模式");
+                useOnline = true;
+                statusLabel.innerText = "🟢 在线 (v" + remoteVer + ")";
+                statusLabel.style.background = "#28a745";
+                // 使用云端数据重新渲染
+                renderTree(remoteData.tree, app, true);
+            } else {
+                console.log("本地已是最新");
+                statusLabel.innerText = "⚪ 离线 (最新)";
+            }
+
+        } catch (e) {
+            console.log("无法连接云端，保持离线模式", e);
+            statusLabel.innerText = "📴 离线模式";
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
