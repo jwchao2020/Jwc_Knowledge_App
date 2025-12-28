@@ -1,4 +1,4 @@
-const LOCAL_DATA = { version: '1766897824', list: [
+const LOCAL_DATA = { version: '1766898223', list: [
   {
     "title": "0.1_四足机器人RL路线",
     "path": "content/0_学习路线&总览/0.1_四足机器人RL路线.html",
@@ -10,12 +10,12 @@ const LOCAL_DATA = { version: '1766897824', list: [
     "folder": "0_学习路线&总览"
   },
   {
-    "title": "0.2_具身智能全栈知识地图 copy",
-    "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图 copy.html",
+    "title": "⚠️ 0.2_具身智能全栈知识地图 (损坏)",
+    "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图.html",
     "folder": "0_学习路线&总览"
   },
   {
-    "title": "⚠️ 0.2_具身智能全栈知识地图 (损坏)",
+    "title": "0.2_具身智能全栈知识地图",
     "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图.html",
     "folder": "0_学习路线&总览"
   },
