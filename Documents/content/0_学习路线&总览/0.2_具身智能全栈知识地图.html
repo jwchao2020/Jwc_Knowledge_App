@@ -1,84 +1,102 @@
-<div class="doc-container"><p>传统运控： 1、2、3、4、7、9、10、11</p>
-<p>具身智能机器人学习总线
-1. 数学与物理基础（Foundations）
-1.1 线性代数（必修 · 控制 &amp; RL 基石）
-向量/矩阵运算
-点乘、叉乘、Hadamard product
-范数（L1/L2/Frobenius）
-向量/矩阵的几何意义（投影、旋转、缩放）
-条件数（用于 Jacobian 稳定性与数值稳定分析）
-矩阵分解
-特征值分解（EVD）
-o对称矩阵的对角化
-o离散线性系统稳定性分析（谱半径 &lt; 1）
-奇异值分解（SVD）
-o降维、最小二乘稳定性
-o多体动力学矩阵、控制器数值稳定性
-QR / Cholesky 分解
-oQP 求解、正定矩阵分解
-o正交矩阵的数值优势
-正定矩阵 / 半正定矩阵
-SPD/PSD 的判别方法（特征值、Cholesky）
-Mass matrix 一定是 SPD（刚体动力学基础）
-QP cost matrix 必须 SPD 才能稳定、唯一解
-伪逆（Moore-Penrose）
-逆雅可比 IK 求解（欠驱/冗余系统）
-过约束系统力分配（least norm solution）
-Damped least squares（Tikhonov 正则）
-最小二乘（Least Squares）
-正规方程（Normal Equation）
-加权最小二乘（WLS）
-在线最小二乘（递推最小二乘）
-应用：力分配、IK、传感器标定、状态估计
-Jacobian（速度/力映射核心）
-关节速度 → 足端线速度、角速度
-足端力 → 关节力矩映射（τ = Jᵀ F）
-雅可比奇异性检测（det(JJᵀ) 接近 0）
-Jacobian 数值计算 vs 解析计算
-掌握标准
-能在纸上算简单矩阵运算、特征值、SVD 思路；
-会用 Numpy / Eigen 调用 EVD / SVD / QR / Cholesky； 
-能用伪逆 + Jacobian 实现简单机械臂/单腿 IK（Python 或 C++）；
-能识别 Jacobian/矩阵病态并解释对控制数值稳定性的影响。
-1.2 微积分与优化（梯度 / Hessian / 优化方法）
-微分基础
-一元函数导数、极值
-多元偏导数、方向导数
-全微分与链式法则（深度网络反向传播本质）
-梯度与 Hessian
-梯度的几何意义（最速上升方向）
-Hessian 矩阵（曲率、凸性判定）
-标量场的二阶近似（Taylor 二阶展开）
-在控制与优化中的角色：
-o二次近似（Newton 法、LQR）
-oQP 中 H 就是 Hessian 或其近似
-优化方法（无约束）
-梯度下降（GD）
-随机梯度下降（SGD）
-动量、Adam（深度 RL 标配）
-Newton 法 &amp; 拟牛顿（BFGS、L-BFGS）
-约束优化与 KKT
-等式约束、拉格朗日乘子
-不等式约束、KKT 条件
-应用：
-o有约束最优控制
-oQP / MPC / WBC 的理论基础
-凸优化
-凸集、凸函数定义
-强凸、Lipschitz 梯度
-一阶/二阶最优性条件
-在机器人学中的应用：QP-based 控制、MPC
-数值积分（动力学仿真必备）
-Euler 前向 / 后向
-中点法
-Runge-Kutta（RK2/RK4）
-稳定性 vs 计算开销（仿真步长的选择）
-掌握标准 
-能对常见多元函数求偏导，并用链式法则手算一次简单 BP；
-理解梯度和 Hessian 的几何意义（最陡下降 + 曲率）；<br />
-知道 GD / Adam / Newton 的更新公式、优缺点；<br />
-看得懂论文里写的优化问题：min 1/2 xᵀHx + fᵀx s.t. Ax ≤ b，知道 H 是 Hessian 或其近似； 
-能用 Euler / RK4 在 Python 中写一个简单双积分/倒立摆仿真。</p>
+<div class="doc-container"><h1>传统运控： 1、2、3、4、7、9、10、11</h1>
+<h1>具身智能机器人学习总线</h1>
+<h2>1. 数学与物理基础（Foundations）</h2>
+<h3>1.1 线性代数（必修 · 控制 &amp; RL 基石）</h3>
+<ul>
+<li><strong>向量/矩阵运算</strong><ul>
+<li>点乘、叉乘、Hadamard product</li>
+<li>范数（L1/L2/Frobenius）</li>
+<li>向量/矩阵的几何意义（投影、旋转、缩放）</li>
+<li>条件数（用于 Jacobian 稳定性与数值稳定分析）</li>
+</ul>
+</li>
+<li><strong>矩阵分解</strong></li>
+<li>特征值分解（EVD）<ul>
+<li>对称矩阵的对角化</li>
+<li>离散线性系统稳定性分析（谱半径 &lt; 1）</li>
+</ul>
+</li>
+<li>奇异值分解（SVD）<ul>
+<li>降维、最小二乘稳定性</li>
+<li>多体动力学矩阵、控制器数值稳定性</li>
+</ul>
+</li>
+<li>QR / Cholesky 分解<ul>
+<li>QP 求解、正定矩阵分解</li>
+<li>正交矩阵的数值优势</li>
+</ul>
+</li>
+<li><strong>正定矩阵 / 半正定矩阵</strong></li>
+<li>SPD/PSD 的判别方法（特征值、Cholesky）</li>
+<li>Mass matrix 一定是 SPD（刚体动力学基础）</li>
+<li>QP cost matrix 必须 SPD 才能稳定、唯一解</li>
+<li><strong>伪逆（Moore-Penrose）</strong></li>
+<li>逆雅可比 IK 求解（欠驱/冗余系统）</li>
+<li>过约束系统力分配（least norm solution）</li>
+<li>Damped least squares（Tikhonov 正则）</li>
+<li><strong>最小二乘（Least Squares）</strong></li>
+<li>正规方程（Normal Equation）</li>
+<li>加权最小二乘（WLS）</li>
+<li>在线最小二乘（递推最小二乘）</li>
+<li>应用：力分配、IK、传感器标定、状态估计</li>
+<li><strong>Jacobian（速度/力映射核心）</strong></li>
+<li>关节速度 → 足端线速度、角速度</li>
+<li>足端力 → 关节力矩映射（τ = Jᵀ F）</li>
+<li>雅可比奇异性检测（det(JJᵀ) 接近 0）</li>
+<li>Jacobian 数值计算 vs 解析计算</li>
+<li><strong>掌握标准</strong></li>
+<li>能在纸上算简单矩阵运算、特征值、SVD 思路；</li>
+<li>会用 Numpy / Eigen 调用 EVD / SVD / QR / Cholesky； </li>
+<li>能用伪逆 + Jacobian 实现简单机械臂/单腿 IK（Python 或 C++）；</li>
+<li>能识别 Jacobian/矩阵病态并解释对控制数值稳定性的影响。</li>
+</ul>
+<hr />
+<h3>1.2 微积分与优化（梯度 / Hessian / 优化方法）</h3>
+<ul>
+<li><strong>微分基础</strong></li>
+<li>一元函数导数、极值</li>
+<li>多元偏导数、方向导数</li>
+<li>全微分与链式法则（深度网络反向传播本质）</li>
+<li><strong>梯度与 Hessian</strong></li>
+<li>梯度的几何意义（最速上升方向）</li>
+<li>Hessian 矩阵（曲率、凸性判定）</li>
+<li>标量场的二阶近似（Taylor 二阶展开）</li>
+<li>在控制与优化中的角色：<ul>
+<li>二次近似（Newton 法、LQR）</li>
+<li>QP 中 H 就是 Hessian 或其近似</li>
+</ul>
+</li>
+<li><strong>优化方法（无约束）</strong></li>
+<li>梯度下降（GD）</li>
+<li>随机梯度下降（SGD）</li>
+<li>动量、Adam（深度 RL 标配）</li>
+<li>Newton 法 &amp; 拟牛顿（BFGS、L-BFGS）</li>
+<li><strong>约束优化与 KKT</strong></li>
+<li>等式约束、拉格朗日乘子</li>
+<li>不等式约束、KKT 条件</li>
+<li>应用：<ul>
+<li>有约束最优控制</li>
+<li>QP / MPC / WBC 的理论基础</li>
+</ul>
+</li>
+<li><strong>凸优化</strong></li>
+<li>凸集、凸函数定义</li>
+<li>强凸、Lipschitz 梯度</li>
+<li>一阶/二阶最优性条件</li>
+<li>在机器人学中的应用：QP-based 控制、MPC</li>
+<li><strong>数值积分（动力学仿真必备）</strong></li>
+<li>Euler 前向 / 后向</li>
+<li>中点法</li>
+<li>Runge-Kutta（RK2/RK4）</li>
+<li>稳定性 vs 计算开销（仿真步长的选择）</li>
+<li><strong>掌握标准</strong></li>
+<li>能对常见多元函数求偏导，并用链式法则手算一次简单 BP；</li>
+<li>理解梯度和 Hessian 的几何意义（最陡下降 + 曲率）；  </li>
+<li>知道 GD / Adam / Newton 的更新公式、优缺点；  </li>
+<li>看得懂论文里写的优化问题：min 1/2 xᵀHx + fᵀx s.t. Ax ≤ b，知道 H 是 Hessian 或其近似；  </li>
+<li>能用 Euler / RK4 在 Python 中写一个简单双积分/倒立摆仿真。</li>
+</ul>
+<hr />
 <h3>1.3 概率与统计（状态估计 &amp; RL 噪声建模基础）</h3>
 <ul>
 <li><strong>概率分布</strong></li>
@@ -114,63 +132,85 @@ oQP / MPC / WBC 的理论基础
 <li>直接法：LU/QR/Cholesky</li>
 <li>迭代法：CG、GMRES（大规模问题）</li>
 <li>预处理技术：雅可比、iLU、多重网格</li>
-<li><strong>用途</strong>：</li>
+<li><strong>用途</strong>：<ul>
 <li>解 MPC / QP / LQR 里的线性系统</li>
 <li>WBC 里求解大规模方程（可能用迭代）</li>
-<li><strong>建议</strong>：</li>
+</ul>
+</li>
+<li><strong>建议</strong>：<ul>
 <li>先把 LU/QR/Cholesky + CG 基本思路吃透；</li>
 <li>GMRES、多重网格可以先知道名词，之后用到再细看</li>
+</ul>
+</li>
 <li><strong>特征值与 SVD 数值求解</strong></li>
 <li>数值稳定性</li>
 <li>大规模稀疏矩阵求解</li>
 <li>随机算法，随机SVD用于近似计算</li>
-<li><strong>用途：</strong></li>
+<li><strong>用途：</strong><ul>
 <li>模型降阶、特征模式分析</li>
 <li>做大规模仿真/日志降维时可能用随机 SVD</li>
-<li><strong>建议：</strong></li>
+</ul>
+</li>
+<li><strong>建议：</strong><ul>
 <li>小规模 SVD 用在最小二乘 / 伪逆【必修】</li>
 <li>大规模/随机 SVD 那块先当“知道有这东西”，以后需要时再查。</li>
+</ul>
+</li>
 <li><strong>误差传播与稳定性</strong></li>
 <li>条件数与病态问题</li>
 <li>浮点误差对控制和动力学仿真的影响</li>
 <li>前向误差 vs 后向误差分析</li>
-<li><strong>用途：</strong></li>
+<li><strong>用途：</strong><ul>
 <li>动力学仿真时间步太大 → 数值不稳定</li>
 <li>雅可比病态 → 足端力/位置很抖</li>
 <li>RL 里面 reward/obs 量纲差异大 → 梯度爆炸/消失</li>
+</ul>
+</li>
 <li><strong>ODE 数值求解</strong></li>
 <li>刚性/非刚性系统求解</li>
 <li>步长控制、误差控制</li>
 <li>微分代数方程求解（用于带约束的动力学系统）</li>
-<li><strong>用途：</strong></li>
+<li><strong>用途：</strong><ul>
 <li>机器人动力学本质就是一堆 ODE/DAE</li>
 <li>Isaac Gym / Mujoco 内部就干这个</li>
 <li>在 Python 里自己写倒立摆/摆杆仿真也会用到</li>
-<li><strong>建议：</strong></li>
+</ul>
+</li>
+<li><strong>建议：</strong><ul>
 <li>至少理解 显式 Euler / RK4 / 隐式方法 的区别</li>
 <li>“刚性”系统 + 小步长对数值稳定性的影响，多结合你实际仿真经验写几条。</li>
+</ul>
+</li>
 <li><strong>非线性问题数值求解</strong></li>
 <li>非线性方程组：牛顿-拉夫森法</li>
 <li>非线性优化：拟牛顿法（BFGS）</li>
 <li>非线性最小二乘：高斯-牛顿法、LM算法</li>
-<li><strong>用途：</strong></li>
+<li><strong>用途：</strong><ul>
 <li>IK 数值解 → 牛顿法/LM</li>
 <li>标定问题 → 非线性最小二乘</li>
 <li>MPC / 参数估计 → 非线性优化</li>
-<li><strong>建议：</strong></li>
+</ul>
+</li>
+<li><strong>建议：</strong><ul>
 <li>至少手推一遍 牛顿-拉夫森 的公式</li>
 <li>知道 LM 在“拟合 + 噪声”场景下更鲁棒（以后你搞传感器标定会用到）。</li>
+</ul>
+</li>
 <li><strong>实现与性能考量</strong></li>
 <li>并行计算（CPU/GPU并行化）</li>
 <li>自动微分</li>
 <li>数值精度（FP32, FP64, FP16）的选择与混合</li>
-<li><strong>用途：</strong></li>
+<li><strong>用途：</strong><ul>
 <li>Isaac Gym / PPO 训练 → GPU 并行</li>
 <li>PyTorch → 自动微分</li>
 <li>以后做 ONNX / TensorRT 推理时要考虑 FP16/FP32</li>
-<li><strong>建议：</strong></li>
+</ul>
+</li>
+<li><strong>建议：</strong><ul>
 <li>“换成 FP16 之后训练发散”</li>
 <li>“自动微分比数值求导稳定多了”</li>
+</ul>
+</li>
 </ul>
 <hr />
 <h3>1.5 力学 / 物理（Embodied 的“物理身体”基础）</h3>
