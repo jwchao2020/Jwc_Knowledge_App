@@ -33,11 +33,6 @@ jobs:
         run: |
           pip install mammoth markdown
 
-      # 4. 🔄 运行转换脚本 (保持不变)
-      - name: 🔄 执行文档转换
-        run: |
-          python3 build_html.py
-
       # 4. 🔄 运行转换脚本 (Word -> HTML)
       - name: 🔄 执行文档转换
         run: |
