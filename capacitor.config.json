@@ -1,0 +1,6 @@
+{
+  "appId": "com.jwc.knowledge",
+  "appName": "Jwc知识库",
+  "webDir": "Documents",
+  "bundledWebRuntime": false
+}

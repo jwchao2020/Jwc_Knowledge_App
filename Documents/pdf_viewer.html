@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PDF 阅读器</title>
+    <script src="lib/pdfjs/pdf.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #333; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: white; font-family: sans-serif; }
+        
+        /* 顶部工具栏 */
+        .toolbar {
+            height: 48px; background: #1a1a1a; display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10;
+        }
+        .btn { background: none; border: none; color: #fff; font-size: 14px; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .btn:active { background: #333; }
+        .page-info { font-size: 14px; color: #ccc; }
+        
+        /* 画布容器 */
+        #container {
+            flex: 1; overflow: auto; position: relative;
+            display: flex; justify-content: center; padding: 20px 0;
+            background: #525659;
+            /* 触摸滚动优化 */
+            -webkit-overflow-scrolling: touch; 
+        }
+        canvas { 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+            background: white; 
+            display: block; 
+        }
+        
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ccc; }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button class="btn" onclick="history.back()">← 返回</button>
+        <div class="page-info">
+            <span id="page_num">--</span> / <span id="page_count">--</span>
+        </div>
+        <div>
+            <button class="btn" onclick="changeZoom(0.2)">+</button>
+            <button class="btn" onclick="changeZoom(-0.2)">-</button>
+        </div>
+    </div>
+
+    <div id="container">
+        <div id="loading-txt" class="loading">正在加载文档...</div>
+        <canvas id="the-canvas"></canvas>
+    </div>
+
+    <script>
+        // === 2. 配置 Worker (必须正确！) ===
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
+
+        // 解析 URL 参数
+        const params = new URLSearchParams(window.location.search);
+        const url = params.get('file');
+        const title = params.get('title');
+        
+        if(title) document.title = title;
+
+        let pdfDoc = null,
+            pageNum = 1,
+            pageRendering = false,
+            pageNumPending = null,
+            scale = 1.0, // 初始缩放
+            canvas = document.getElementById('the-canvas'),
+            ctx = canvas.getContext('2d');
+
+        if (!url) {
+            document.getElementById('loading-txt').innerText = "❌ 错误：未指定文件路径";
+        } else {
+            // 加载文档
+            pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                document.getElementById('page_count').textContent = pdfDoc.numPages;
+                document.getElementById('loading-txt').style.display = 'none';
+                
+                // 初始渲染：根据屏幕宽度自动计算最佳缩放比例
+                const containerWidth = document.getElementById('container').clientWidth;
+                pdfDoc.getPage(1).then(page => {
+                    const viewport = page.getViewport({scale: 1.0});
+                    // 让 PDF 宽度占屏幕的 95%
+                    scale = (containerWidth * 0.95) / viewport.width;
+                    renderPage(pageNum);
+                });
+
+            }, function (reason) {
+                console.error(reason);
+                document.getElementById('loading-txt').innerText = "❌ 加载失败: " + reason.message;
+            });
+        }
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({scale: scale});
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                const renderTask = page.render(renderContext);
+
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            document.getElementById('page_num').textContent = num;
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        // 翻页逻辑 (点击屏幕左右两侧)
+        // document.getElementById('container').addEventListener('click', function(e) {
+        //     const width = window.innerWidth;
+        //     if(e.clientX < width * 0.3) {
+        //         if(pageNum <= 1) return;
+        //         pageNum--;
+        //         queueRenderPage(pageNum);
+        //     } else if (e.clientX > width * 0.7) {
+        //         if(pageNum >= pdfDoc.numPages) return;
+        //         pageNum++;
+        //         queueRenderPage(pageNum);
+        //     }
+        // });
+        
+        // 缩放
+        window.changeZoom = function(delta) {
+            scale += delta;
+            if(scale < 0.2) scale = 0.2;
+            queueRenderPage(pageNum);
+        }
+    </script>
+</body>
+</html>

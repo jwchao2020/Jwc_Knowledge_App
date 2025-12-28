@@ -1,0 +1,778 @@
+# ** 线性代数（按李永乐章节排序）**
+- **标签说明：**
+  - ⭐⭐⭐ 必修：一定要熟练，会算、会解释、能写到代码里
+  - ⭐⭐ 建议：要有直觉，会用，公式不必全背
+  - ⭐  选修：知道有这概念，遇到再查即可
+
+## 第一章 行列式 ⭐⭐
+### 1.1 本章需要掌握的（对应李永乐）
+#### 1.1.1 行列式的定义（按行/列展开）
+- **1. 概念：** 不同行不同列元素乘积的代数和（共 **n!** 项），（只有 **n x n** 矩阵才有行列式）。
+- **2. 展开式：**
+      $$
+      \text{设 } A = \begin{vmatrix}
+      a_{11} & a_{12} & \dots & a_{1n} \\
+      a_{21} & a_{22} & \dots & a_{2n} \\
+      \vdots & \vdots & \ddots & \vdots \\
+      a_{n1} & a_{n2} & \dots & a_{nn}
+      \end{vmatrix}=\begin{cases} 
+      |A| = a_{i1}A_{i1}+a_{i2}A_{i2}+ \dots +a_{in}A_{in} \quad (按i行展开) \\ 
+      |A| = a_{1j}A_{1j}+a_{2j}A_{2j}+ \dots +a_{nj}A_{nj} \quad (按j列展开)  
+      \end{cases}\\~\\A_{ij} = (-1)^{i+j}M_{ij}\\~\\
+      A_{ij}是a_{ij}的代数余子式 \\~\\
+      $$
+      $$
+      \color{blue}\mathbf{M_{ij} 是通过从原矩阵 A 中删除第 i 行和第 j 列后，剩余元素构成的 (n−1)×(n−1) 子矩阵的行列式。}\\~\\
+      $$
+
+      例如原始矩阵为:  
+        $$
+        A = \begin{pmatrix}
+        1 & 2 & 3 \\
+        4 & 5 & 6 \\
+        7 & 8 & 9
+        \end{pmatrix}
+        $$
+      按第 2 行展开:
+        $$
+        A = \begin{pmatrix}
+        1 & 2 & 3 \\
+        4 & 5 & 6 \\
+        7 & 8 & 9
+        \end{pmatrix}  
+        = |A| = a_{21}A_{21} + a_{22}A_{22} + a_{23}A_{23} \\~\\
+        $$
+      $$
+      A_{21} = (-1)^{2+1} \begin{vmatrix} 
+              2 & 3 \\
+              8 & 9 
+              \end{vmatrix}
+              = (-1) \times (2 \times 9 - 3 \times 8) = -1 \times (18 - 24) 
+              = -1 \times (-6) = 6 \\~\\
+      $$
+      $$
+      A_{22} = (-1)^{2+2} \begin{vmatrix} 
+      1 & 3 \\ 
+      7 & 9 
+      \end{vmatrix} 
+      = (1) \times (1 \times 9 - 3 \times 7) = 1 \times (9 - 21) 
+      = 1 \times (-12) = -12 \\~\\
+      $$
+      $$
+      A_{23} = (-1)^{2+3} \begin{vmatrix}
+              1 & 2 \\
+              7 & 8 
+              \end{vmatrix}
+              = (-1) \times (1 \times 8 - 2 \times 7) = -1 \times (8 - 14) 
+              = -1 \times (-6) = 6 \\~\\
+      $$
+      $$
+      |A| = (4 \times 6) + (5 \times -12) + (6 \times 6) \\~\\
+      |A| = 24 - 60 + 36 \\~\\
+      |A| = 0 \\~\\
+      $$
+
+    按第 1 列展开:
+      $$
+      |A| = a_{11}A_{11} + a_{21}A_{21} + a_{31}A_{31} \\~\\
+      A_{11} = (-1)^{1+1} \begin{vmatrix} 
+      5 & 6 \\ 
+      8 & 9 
+      \end{vmatrix} 
+      = (1) \times (5 \times 9 - 6 \times 8) 
+      = 1 \times (45 - 48) = 1 \times (-3) 
+      = -3 \\~\\
+      $$
+      $$
+      A_{21} = (-1)^{2+1} \begin{vmatrix} 
+      2 & 3 \\ 
+      8 & 9 
+      \end{vmatrix} 
+      = (-1) \times (2 \times 9 - 3 \times 8) 
+      = -1 \times (18 - 24) 
+      = -1 \times (-6) 
+      = 6 \\~\\
+      $$
+      $$
+      A_{31} = (-1)^{3+1} \begin{vmatrix} 
+      2 & 3 \\ 
+      5 & 6 
+      \end{vmatrix} 
+      = (1) \times (2 \times 6 - 3 \times 5) 
+      = 1 \times (12 - 15) 
+      = 1 \times (-3) 
+      = -3 \\~\\
+      $$
+      $$
+      |A| = (1 \times -3) + (4 \times 6) + (7 \times -3) \\
+      |A| = -3 + 24 - 21 \\
+      |A| = 0
+      $$
+
+
+#### 1.1.2 行列式的基本性质：
+  - **1.  两行互换，行列式变号。特别：当两行相等，行列式的值为0；两行成比例，行列式的值为0；**
+    原始矩阵A:
+    $$
+    A = \begin{vmatrix}
+    a_{11} & a_{12} & \dots & a_{1n} \\
+    a_{21} & a_{22} & \dots & a_{2n} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    a_{n1} & a_{n2} & \dots & a_{nn}
+    \end{vmatrix}
+    $$
+    二阶行列式具体计算示例：
+    $$
+    \begin{cases}
+    \text{1. 互换变号：} 
+    \begin{vmatrix} 1 & 2 \\ 3 & 4 \end{vmatrix} = 1\times4 - 2\times3 = 4-6 = -2 \\
+    \quad \begin{vmatrix} 3 & 4 \\ 1 & 2 \end{vmatrix} = 3\times2 - 4\times1 = 6-4 = 2 = -(-2)\\~\\
+
+    \text{2. 两行相等为0：} 
+    \begin{vmatrix} 2 & 5 \\ 2 & 5 \end{vmatrix} = 2\times5 - 5\times2 = 10-10 = 0\\~\\
+
+    \text{3. 两行成比例为0：} 
+    \begin{vmatrix} 2 & 4 \\ 1 & 2 \end{vmatrix} = 2\times2 - 4\times1 = 4-4 = 0 \\
+    \quad \text{(第1行是第2行的2倍)}
+    \end{cases}\\~
+    $$
+  - **2. 行列式的转置，行列式的值不变 (转置：行列互换)**
+    $$
+    |A| = |A^T|\\~\\
+    $$
+    示例1：二阶行列式:
+    $$
+    A = \begin{pmatrix} 2 & 3 \\ 1 & 4 \end{pmatrix},\quad 
+    A^T = \begin{pmatrix} 2 & 1 \\ 3 & 4 \end{pmatrix}\\~\\
+    |A| = \begin{vmatrix} 2 & 3 \\ 1 & 4 \end{vmatrix} = 2\times4 - 3\times1 = 8-3 = 5\\
+    |A^T| = \begin{vmatrix} 2 & 1 \\ 3 & 4 \end{vmatrix} = 2\times4 - 1\times3 = 8-3 = 5\\~\\
+    $$
+    示例2：三阶行列式:
+    $$
+    B = \begin{pmatrix} 1 & 2 & 3 \\ 0 & 4 & 5 \\ 1 & 0 & 6 \end{pmatrix},\quad 
+    B^T = \begin{pmatrix} 1 & 0 & 1 \\ 2 & 4 & 0 \\ 3 & 5 & 6 \end{pmatrix}\\~\\
+    |B| = \begin{vmatrix} 1 & 2 & 3 \\ 0 & 4 & 5 \\ 1 & 0 & 6 \end{vmatrix} 
+    = 1\times\begin{vmatrix} 4 & 5 \\ 0 & 6 \end{vmatrix} 
+    - 2\times\begin{vmatrix} 0 & 5 \\ 1 & 6 \end{vmatrix} 
+    + 3\times\begin{vmatrix} 0 & 4 \\ 1 & 0 \end{vmatrix}\\~\\
+    = 1\times(4\times6-5\times0) - 2\times(0\times6-5\times1) + 3\times(0\times0-4\times1)\\
+    = 1\times24 - 2\times(-5) + 3\times(-4) = 24 + 10 - 12 = 22\\~\\
+    $$
+    $$
+    |B^T| = \begin{vmatrix} 1 & 0 & 1 \\ 2 & 4 & 0 \\ 3 & 5 & 6 \end{vmatrix}
+    = 1\times\begin{vmatrix} 4 & 0 \\ 5 & 6 \end{vmatrix}
+    - 0\times\begin{vmatrix} 2 & 0 \\ 3 & 6 \end{vmatrix}
+    + 1\times\begin{vmatrix} 2 & 4 \\ 3 & 5 \end{vmatrix}\\~\\
+    = 1\times(4\times6-0\times5) - 0 + 1\times(2\times5-4\times3)\\
+    = 1\times24 + 1\times(10-12) = 24 - 2 = 22\\~\\
+    \text{结论：}|A| = |A^T| = 5,\quad |B| = |B^T| = 22\\~
+    $$
+  - **3. 某行K倍加到另一行，行列式的值不变**
+    $$
+    \begin{cases}
+    \text{一般形式：} 
+    \begin{vmatrix} a & b \\ c & d \end{vmatrix} = 
+    \begin{vmatrix} a & b \\ c+ka & d+kb \end{vmatrix} \\~\\
+
+    \text{具体示例1：} 
+    \begin{vmatrix} 1 & 2 \\ 3 & 4 \end{vmatrix} = 1\times4 - 2\times3 = -2 \\
+    \begin{vmatrix} 1 & 2 \\ 3+2\times1 & 4+2\times2 \end{vmatrix} = 
+    \begin{vmatrix} 1 & 2 \\ 5 & 8 \end{vmatrix} = 1\times8 - 2\times5 = 8-10 = -2 \\~\\
+
+    \text{具体示例2：} 
+    \begin{vmatrix} 2 & 3 \\ 1 & 4 \end{vmatrix} = 2\times4 - 3\times1 = 8-3 = 5 \\
+    \begin{vmatrix} 2 & 3 \\ 1+(-0.5)\times2 & 4+(-0.5)\times3 \end{vmatrix} = 
+    \begin{vmatrix} 2 & 3 \\ 0 & 2.5 \end{vmatrix} = 2\times2.5 - 3\times0 = 5-0 = 5
+    \end{cases}\\~
+    $$
+  - **4. 某行可拆分为两行之和，行列式可拆分为两个行列式之和（列不行）**
+    $$
+    \text{设第 } i \text{ 行可拆分为 } \mathbf{r}_i = \mathbf{u} + \mathbf{v} \text{，则：}\\~\\
+    \begin{vmatrix}
+    \vdots \\
+    \mathbf{u} + \mathbf{v} \\
+    \vdots
+    \end{vmatrix}
+    =
+    \begin{vmatrix}
+    \vdots \\
+    \mathbf{u} \\
+    \vdots
+    \end{vmatrix}
+    +
+    \begin{vmatrix}
+    \vdots \\
+    \mathbf{v} \\
+    \vdots
+    \end{vmatrix}\\~\\
+
+    \text{二阶行列式具体示例：}\\~\\
+    \begin{cases}
+    \text{原行列式：} 
+    \begin{vmatrix} 3+2 & 4+1 \\ 5 & 6 \end{vmatrix} = 
+    \begin{vmatrix} 5 & 5 \\ 5 & 6 \end{vmatrix} = 5\times6 - 5\times5 = 30-25 = 5\\~\\
+
+    \text{拆分为两个行列式：} 
+    \begin{vmatrix} 3 & 4 \\ 5 & 6 \end{vmatrix} + 
+    \begin{vmatrix} 2 & 1 \\ 5 & 6 \end{vmatrix} = (3\times6-4\times5) + (2\times6-1\times5) \\
+    = (18-20) + (12-5) = (-2) + 7 = 5\\~\\
+
+    \text{验证：} 5 = 5 \quad \text{✓}
+    \end{cases}\\~
+    $$
+  - **5. 某行有公因数K，可把K提到行列式外，特别当某行为0，行列式的值为0**
+    $$
+    \begin{cases}
+    \text{示例1：} 
+    \begin{vmatrix} 4 & 6 \\ 3 & 5 \end{vmatrix} = 4\times5 - 6\times3 = 20-18 = 2 \\
+    \quad \text{提出公因数2：} 2\begin{vmatrix} 2 & 3 \\ 3 & 5 \end{vmatrix} = 2\times(2\times5 - 3\times3) = 2\times(10-9) = 2\times1 = 2\\~\\
+
+    \text{示例2：} 
+    \begin{vmatrix} 9 & 12 \\ 2 & 1 \end{vmatrix} = 9\times1 - 12\times2 = 9-24 = -15 \\
+    \quad \text{提出公因数3：} 3\begin{vmatrix} 3 & 4 \\ 2 & 1 \end{vmatrix} = 3\times(3\times1 - 4\times2) = 3\times(3-8) = 3\times(-5) = -15\\~\\
+
+    \text{示例3（某行为0）：} 
+    \begin{vmatrix} 0 & 0 \\ 4 & 7 \end{vmatrix} = 0\times7 - 0\times4 = 0-0 = 0\\~\\
+
+    \text{示例4（结合性质）：} 
+    \begin{vmatrix} 2 & 4 \\ 1 & 3 \end{vmatrix} = 2\times3 - 4\times1 = 6-4 = 2 \\
+    \quad \text{第1行乘以2：} \begin{vmatrix} 4 & 8 \\ 1 & 3 \end{vmatrix} = 4\times3 - 8\times1 = 12-8 = 4 \\
+    \quad \text{提出公因数2：} 2\begin{vmatrix} 2 & 4 \\ 1 & 3 \end{vmatrix} = 2\times2 = 4
+    \end{cases}\\~
+    $$
+  - **6. 某行乘以K,行列式变大k倍**
+    $$
+    \begin{cases}\text{性质：} 
+    \begin{vmatrix} a & b 
+    \\ kc & kd 
+    \end{vmatrix} 
+    = k \times \begin{vmatrix} 
+    a & b \\ 
+    c & d \end{vmatrix} \\~\\
+    \text{示例1：} 
+    \begin{vmatrix} 1 & 2 \\
+     3 & 4 \end{vmatrix} 
+     = 1\times4 - 2\times3 = 4-6 = -2 \\
+     \begin{vmatrix} 1 & 2 \\
+      6 & 8 \end{vmatrix} 
+      = 1\times8 - 2\times6 
+      = 8-12 = -4 = 2 \times (-2) \\
+      \quad \text{(第2行乘以2，行列式也变为2倍)} \\~\\
+    \text{示例2：} 
+    \begin{vmatrix} 2 & 3 \\
+     1 & 4 \end{vmatrix} 
+     = 2\times4 - 3\times1 = 8-3 = 5 \\
+     \begin{vmatrix} 
+     2 & 3 \\
+     3 & 12 \end{vmatrix} 
+     = 2\times12 - 3\times3 = 24-9 = 15 = 3 \times 5 \\
+     \quad \text{(第2行乘以3，行列式也变为3倍)} \end{cases}\\~
+    $$
+  - **7. 若 A 是n阶矩阵，则$$|kA| = k^n|A|;$$**
+  - **8. 若A 、B都是n阶矩阵，则$$|AB| = |A|~|B|;$$**
+  - **9. 若 A 是 n 阶矩阵，则 $|\mathrm{adj}(A)| = |A|^{n-1}$（伴随矩阵性质：$A \cdot \mathrm{adj}(A) = |A|I $）**
+    $$
+    \text{ 若 A 是 n 阶矩阵，则 } |\mathrm{adj}(A)| = |A|^{n-1}\\~\\
+    \text{其中 } \mathrm{adj}(A) \text{ 是 A 的伴随矩阵，满足 } \mathrm{adj}(A) = |A| \cdot A^{-1} \text{ 或 } A \cdot \mathrm{adj}(A) = |A| \cdot I\\~\\
+    \text{证明思路：由 } A \cdot \mathrm{adj}(A) = |A| \cdot I_n \text{ 两边取行列式：}\\~\\
+    |A \cdot \mathrm{adj}(A)| = ||A| \cdot I_n| \\~\\
+    |A| \cdot |\mathrm{adj}(A)| = |A|^n \cdot |I_n| \\~\\
+    |A| \cdot |\mathrm{adj}(A)| = |A|^n \\~\\
+    \text{当 } |A| \neq 0 \text{ 时，两边除以 } |A| \text{ 得： } |\mathrm{adj}(A)| = |A|^{n-1}\\~\\
+    ~\\
+    \text{设 } A = \begin{pmatrix} 2 & 1 \\ 3 & 4 \end{pmatrix}\\~\\
+    |A| = 2\times4 - 1\times3 = 8-3 = 5\\~\\
+    \mathrm{adj}(A) = \begin{pmatrix} 4 & -1 \\ -3 & 2 \end{pmatrix}\\~\\
+    |\mathrm{adj}(A)| = 4\times2 - (-1)\times(-3) = 8-3 = 5\\~\\
+    |A|^{n-1} = 5^{2-1} = 5^1 = 5\\~\\
+    \text{验证： } |\mathrm{adj}(A)| = 5 = |A|^{n-1}\\~
+    $$
+  - **10. 若 A 是n阶可逆矩阵，则$$|A^{-1}| = |A|^{-1}$$**
+  - **11. 若 n阶矩阵A 和B相似，则$$|A| = |B|$$**
+  
+#### 1.1.3. 行列式与矩阵可逆性的关系：
+     det(A) ≠ 0 ↔ 矩阵可逆，行列式不为0;
+     如果一个矩阵 A 是可逆的，那么它的逆矩阵 $A^{-1}$ 是唯一的;
+     两个可逆矩阵的乘积是可逆的： $[AB]^{-1}=A^{-1}B^{-1}$ ;
+     如果 A 是可逆的，那么$A^{T}$(A的转置)也是可逆的,$(A^{T})^{-1} = (A^{-1})^{T}$;
+  
+#### 1.1.4 行列式计算：
+  - **1. 二、三阶行列式计算**
+        $$
+        \text{例子：}\\
+        \text{设原始矩阵为:} \\
+        A = \begin{pmatrix}
+        1 & 2 & 3 \\
+        4 & 5 & 6 \\
+        7 & 8 & 9
+        \end{pmatrix} \\~\\
+        \text{按第 2 行展开:} \\~\\
+        |A| = a_{21}A_{21}+a_{22}A_{22}+a_{23}A_{23} \\
+        A_{21} = (-1)^{2+1} \begin{vmatrix} 2 & 3 \\ 8 & 9 \end{vmatrix} = (-1) \times (2 \times 9 - 3 \times 8) = -1 \times (18 - 24) = -1 \times (-6) = 6 \\
+        A_{22} = (-1)^{2+2} \begin{vmatrix} 1 & 3 \\ 7 & 9 \end{vmatrix} = (1) \times (1 \times 9 - 3 \times 7) = 1 \times (9 - 21) = 1 \times (-12) = -12 \\
+        A_{23} = (-1)^{2+3} \begin{vmatrix} 1 & 2 \\ 7 & 8 \end{vmatrix} = (-1) \times (1 \times 8 - 2 \times 7) = -1 \times (8 - 14) = -1 \times (-6) = 6 \\
+        |A| = (4 \times 6) + (5 \times -12) + (6 \times 6) \\
+        |A| = 24 - 60 + 36 \\
+        |A| = 0
+        $$
+  - **2. 高阶行列式用性质化简**
+        $$
+        \text{设 } A = \begin{vmatrix}
+        a_{11} & a_{12} & \dots & a_{1n} \\
+        a_{21} & a_{22} & \dots & a_{2n} \\
+        \vdots & \vdots & \ddots & \vdots \\
+        a_{n1} & a_{n2} & \dots & a_{nn}
+        \end{vmatrix}=\begin{cases} |A| = a_{i1}A_{i1}+a_{i2}A_{i2}+ \dots +a_{in}A_{in} \quad (按i行展开) \\ |A| = a_{1j}A_{1j}+a_{2j}A_{2j}+ \dots +a_{nj}A_{nj} \quad (按j列展开)  \end{cases}\\~\\A_{ij} = (-1)^{i+j}M_{ij}\\~
+        $$
+  - **3. 上(下)三角行列式的值等于主对角线元素的乘积**
+        $$
+        \textbf{性质~} 上（下）三角行列式的值等于主对角线元素的乘积\\~\\
+        \textbf{上三角行列式：}\\~\\
+        \begin{vmatrix}
+        a_{11} & a_{12} & a_{13} & \cdots & a_{1n} \\
+        0 & a_{22} & a_{23} & \cdots & a_{2n} \\
+        0 & 0 & a_{33} & \cdots & a_{3n} \\
+        \vdots & \vdots & \vdots & \ddots & \vdots \\
+        0 & 0 & 0 & \cdots & a_{nn}
+        \end{vmatrix}
+        = a_{11}a_{22}a_{33}\cdots a_{nn}\\~\\
+
+        \textbf{下三角行列式：}\\~\\
+        \begin{vmatrix}
+        a_{11} & 0 & 0 & \cdots & 0 \\
+        a_{21} & a_{22} & 0 & \cdots & 0 \\
+        a_{31} & a_{32} & a_{33} & \cdots & 0 \\
+        \vdots & \vdots & \vdots & \ddots & \vdots \\
+        a_{n1} & a_{n2} & a_{n3} & \cdots & a_{nn}
+        \end{vmatrix}
+        = a_{11}a_{22}a_{33}\cdots a_{nn}\\~
+        $$
+- **4. 副对角线行列式的值**
+        $$
+        \textbf{上副对角线行列式（右上到左下）：}\\~\\
+        \begin{vmatrix}
+        0 & 0 & \cdots & 0 & a_{1n} \\
+        0 & 0 & \cdots & a_{2,n-1} & a_{2n} \\
+        \vdots & \vdots & \ddots & \vdots & \vdots \\
+        0 & a_{n-1,2} & \cdots & a_{n-1,n-1} & a_{n-1,n} \\
+        a_{n1} & a_{n2} & \cdots & a_{n,n-1} & a_{nn}
+        \end{vmatrix}
+        = (-1)^{\frac{n(n-1)}{2}} a_{1n}a_{2,n-1}\cdots a_{n1}\\~\\
+
+        \textbf{下副对角线行列式（左下到右上）：}\\~\\
+        \begin{vmatrix}
+        a_{11} & a_{12} & \cdots & a_{1,n-1} & a_{1n} \\
+        a_{21} & a_{22} & \cdots & a_{2,n-1} & 0 \\
+        \vdots & \vdots & \ddots & \vdots & \vdots \\
+        a_{n-1,1} & a_{n-1,2} & \cdots & 0 & 0 \\
+        a_{n1} & 0 & \cdots & 0 & 0
+        \end{vmatrix}
+        = (-1)^{\frac{n(n-1)}{2}} a_{1n}a_{2,n-1}\cdots a_{n1}\\~
+        $$
+  - **5. 两个特殊拉普拉斯展开式**
+        $$
+        \textbf{形式1：分块对角矩阵}\\~\\
+        \left|\begin{array}{cc}
+        A & O \\
+        O & B
+        \end{array}\right|
+        = |A| \cdot |B|\\~\\
+        \text{其中A为m阶矩阵，B为n阶矩阵，O为零矩阵}\\~\\
+
+        \textbf{形式2：分块三角矩阵}\\~\\
+        \left|\begin{array}{cc}
+        A & C \\
+        O & B
+        \end{array}\right|
+        = |A| \cdot |B|,\quad
+        \left|\begin{array}{cc}
+        A & O \\
+        D & B
+        \end{array}\right|
+        = |A| \cdot |B|\\~\\
+        \text{其中A为m阶矩阵，B为n阶矩阵，C、D为任意矩阵}\\~
+        $$
+  - **6. 范德蒙行列式**
+        $$
+        \textbf{定义：} n阶范德蒙行列式\\~\\
+        V_n = \begin{vmatrix}
+        1 & 1 & 1 & \cdots & 1 \\
+        x_1 & x_2 & x_3 & \cdots & x_n \\
+        x_1^2 & x_2^2 & x_3^2 & \cdots & x_n^2 \\
+        \vdots & \vdots & \vdots & \ddots & \vdots \\
+        x_1^{n-1} & x_2^{n-1} & x_3^{n-1} & \cdots & x_n^{n-1}
+        \end{vmatrix}
+        = \prod_{1 \leq i < j \leq n} (x_j - x_i)\\~\\
+        \text{即所有 } x_j - x_i \ (i < j) \text{ 的乘积,（第二行）}\\~
+        \\~\\
+        \text{计算：} V_3 = \begin{vmatrix}
+        1 & 1 & 1 \\
+        x_1 & x_2 & x_3 \\
+        x_1^2 & x_2^2 & x_3^2
+        \end{vmatrix}\\~\\
+        V_3 = (x_2 - x_1)(x_3 - x_1)(x_3 - x_2)\\~\\
+        \text{数值例子：} \begin{vmatrix}
+        1 & 1 & 1 \\
+        1 & 2 & 3 \\
+        1 & 4 & 9
+        \end{vmatrix} = (2-1)(3-1)(3-2) = 1 \times 2 \times 1 = 2\\~
+        $$
+### 1.2 工程/机器人扩展（补充）(未完成)
+- **1. 行列式的几何意义 ⭐⭐**
+  **1. 2D面积缩放因子，任何二维物体都可以进行面积缩放**
+      **(1).**
+        $$
+        A = \begin{pmatrix} a & b \\ c & d \end{pmatrix},\quad
+        (x,y) \mapsto A \begin{pmatrix} x \\ y \end{pmatrix}\\~\\
+        \text{单位正方形面积 }1 \xrightarrow{A}
+        \text{平行四边形面积 } \left|\det A\right| = |ad - bc|\\~\\
+
+        \textbf{设 } A = \begin{pmatrix} a & b \\ c & d \end{pmatrix} \text{ 是一个 } 2 \times 2 \text{ 矩阵}\\~\\
+        \text{行列式 } |A| = ad - bc \text{ 的几何意义：}\\~\\
+        \begin{array}{l}
+        \text{矩阵 } A \text{ 将单位正方形变换为平行四边形} \\
+        \text{变换后的平行四边形面积 } = |\det(A)| \\
+        \text{即：行列式的绝对值表示面积缩放比例,行列式的正负表示朝向有没有翻转}\\
+        \text{det(A)=0：所有东西被压扁到一条线（面积变成 0，变换不可逆）}\\
+        \end{array}\\~
+        $$
+      **(2).**
+        $$
+        \textbf{正行列式（保持定向）:}\\
+        \text{设 } A = \begin{pmatrix} 2 & 0 \\ 0 & 3 \end{pmatrix}, \quad |A| = 2 \times 3 - 0 \times 0 = 6\\~\\
+        \text{几何意义：}\\~\\
+        \begin{array}{l}
+        \text{单位正方形：顶点 } (0,0), (1,0), (0,1), (1,1) \\
+        \text{变换后：顶点 } (0,0), (2,0), (0,3), (2,3) \\
+        \text{原面积 } = 1, \quad \text{新面积 } = 2 \times 3 = 6 \\
+        \text{面积缩放因子 } = 6 = |\det(A)|
+        \end{array}\\~\\
+        \textbf{负行列式（反向定向）:}
+        \\
+        \text{设 } B = \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}, \quad |B| = 1 \times (-1) - 1 \times 1 = -2\\~\\
+        \text{几何意义：}\\~\\
+        \begin{array}{l}
+        \text{单位正方形变换后仍为平行四边形} \\
+        \text{面积 } = |\det(B)| = 2 \\
+        \text{负号表示定向反转（从逆时针变为顺时针）}
+        \end{array}\\~
+        $$
+  **2. 3D体积缩放因子，任何三维物体都可以进行体积缩放**
+        $$
+        \text{设 } A = \begin{pmatrix} a_{11} & a_{12} & a_{13} \\ a_{21} & a_{22} & a_{23} \\ a_{31} & a_{32} & a_{33} \end{pmatrix} \text{ 是一个 } 3 \times 3 \text{ 矩阵}\\~\\
+        \text{行列式 } |A| \text{ 的几何意义：}\\~\\
+        \begin{array}{l}
+        \text{矩阵 } A \text{ 将单位立方体变换为平行六面体} \\
+        \text{变换后的平行六面体体积 } = |\det(A)| \\
+        \text{即：行列式的绝对值表示体积缩放比例}
+        \end{array}\\~\\
+        ~\\
+        \textbf{设 } A = \begin{pmatrix} 2 & 0 & 0 \\ 0 & 3 & 0 \\ 0 & 0 & 4 \end{pmatrix}, \quad |A| = 2 \times 3 \times 4 = 24\\~\\
+        \text{几何意义：（对角矩阵：各维度缩放）}\\~\\
+        \begin{array}{l}
+        \text{单位立方体：边长为1的立方体} \\
+        \text{变换后：长方体，尺寸 } 2 \times 3 \times 4 \\
+        \text{原体积 } = 1, \quad \text{新体积 } = 2 \times 3 \times 4 = 24 \\
+        \text{体积缩放因子 } = 24 = |\det(A)|
+        \end{array}\\~
+        \\~\\
+        \textbf{设 } B = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & -1 \end{pmatrix}, \quad |B| = -1\\~\\
+        \text{几何意义：}\\~\\
+        \begin{array}{l}
+        \text{相当于镜像反射（z轴反向）} \\
+        \text{体积大小不变： } |\det(B)| = 1 \\
+        \text{负号表示手性改变（左手系变右手系）}
+        \end{array}\\~
+        \\~\\
+        \textbf{设 } C = \begin{pmatrix} 1 & 2 & 3 \\ 2 & 4 & 6 \\ 1 & 1 & 1 \end{pmatrix}, \quad |C| = 0\\~\\
+        \text{几何意义：（非对角矩阵，可能包括旋转倾斜变换）}\\~\\
+        \begin{array}{l}
+        \text{将三维空间压缩到一个平面或直线上} \\
+        \text{体积缩放因子 } = 0 \\
+        \text{矩阵不可逆，信息丢失}
+        \end{array}\\~
+        \\~\\
+        \textbf{3D行列式几何性质的推论：}\\~\\
+        \begin{cases}
+        |\det(A)| > 1 & \text{：体积放大} \\
+        |\det(A)| = 1 & \text{：保持体积（等距变换）} \\
+        0 < |\det(A)| < 1 & \text{：体积缩小} \\
+        |\det(A)| = 0 & \text{：降维（体积为零）} \\
+        \det(A) > 0 & \text{：保持手性（右手系保持）} \\
+        \det(A) < 0 & \text{：反转手性（右手系变左手系）}
+        \end{cases}\\~
+        \\~\\
+        \textbf{矩阵乘法的体积缩放：}\\~\\
+        \text{设 } A, B \text{ 为 } 3 \times 3 \text{ 矩阵}\\~\\
+        |\det(AB)| = |\det(A)| \cdot |\det(B)|\\~\\
+        \text{几何解释：}\\~\\
+        \begin{array}{l}
+        \text{先进行 } B \text{ 变换，体积缩放 } |\det(B)| \text{ 倍} \\
+        \text{再进行 } A \text{ 变换，体积缩放 } |\det(A)| \text{ 倍} \\
+        \text{总体体积缩放 } |\det(A)| \cdot |\det(B)| \text{ 倍}
+        \end{array}\\~
+        \\~\\
+        \textbf{维度对比：}\\~\\
+        \begin{array}{c|cc}
+        & \text{2D} & \text{3D} \\
+        \hline
+        \text{原图形} & \text{单位正方形} & \text{单位立方体} \\
+        \text{新图形} & \text{平行四边形} & \text{平行六面体} \\
+        \text{行列式意义} & \text{面积缩放} & \text{体积缩放} \\
+        \text{符号意义} & \text{定向反转} & \text{手性反转} \\
+        \text{零值意义} & \text{压缩到线} & \text{压缩到面或线}
+        \end{array}\\~
+        $$
+  **3. 定向反转：**
+      **1.** detA<0：定向反转（逆时针变顺时针），例如原三角形P1 → P2 → P3是逆时针，经变换矩阵后P1→P2→P3 是顺时针；
+  **4. 手性反转**
+      **(1).** 手性反转：xyz 的正方向能用右手对上的叫右手系，能用左手对上的叫左手系；
+      **(2).**  detA<0：手性反转(右手坐标系变成左手坐标系)；例如坐标系正方向 x y z 能用右手食指、中指 、大拇指对应的是右手系；坐标系正方向 x y z 能用左手食指、中指 、大拇指对应的是左手系。
+
+- **2. Jacobian 的行列式与奇异姿态 ⭐⭐(未完成)**
+   **1.** 对于末端坐标变换 Jacobian J，det(J) = 0 对应“奇异”
+   **2.** 机器人处于奇异姿态时，有方向无力/无速度分辨率
+
+### 1.3 推荐资料
+- 《李永乐 线性代数辅导讲义》
+  - 第 1 章：行列式（全学）
+- 3Blue1Brown（可选）
+  - 关于行列式几何意义的视频
+### 1.4 编程练习（Numpy / Eigen）
+- Numpy：
+  - 用 np.linalg.det(A) 计算 2×2、3×3 行列式
+  - 构造一个 2D 旋转矩阵 R，验证 det(R) ≈ 1
+- 思考题：
+  - 假设有一个 2×2 Jacobian J，自己随便写一个奇异的（比如第二行是第一行倍数），算一下 det(J)，写一句话解释为什么这时“自由度缺了一维”。
+
+## 第二章 矩阵 ⭐⭐⭐
+2.1 本章需要掌握的（对应李永乐）
+- 矩阵的基本概念：
+  - 形状（m×n）、行、列
+- 矩阵运算：
+  - 加减、数乘
+  - 矩阵乘法（维度匹配）
+  - 转置、共轭转置
+- 特殊矩阵：
+  - 零矩阵、单位矩阵、对角矩阵、对称矩阵
+- 逆矩阵与可逆条件：
+  - A⁻¹ 的定义
+  - A A⁻¹ = I
+- 初等矩阵与矩阵的行变换
+- 矩阵的秩 rank(A)：
+  - 秩的定义（行秩=列秩）
+  - 秩与行空间/列空间维数的关系（可先直观知道）
+2.2 工程/机器人扩展（补充）
+- 正交矩阵 ⭐⭐⭐
+  - 定义：Qᵀ Q = I
+  - 性质：保持长度与角度（旋转矩阵就是正交矩阵）
+- 矩阵范数 ⭐⭐
+  - Frobenius 范数
+  - 诱导 2 范数（知道概念即可）
+- 条件数（cond）⭐⭐
+  - cond(A) = σ_max / σ_min（后面和 SVD 连起来）
+  - 条件数大 → 病态 → 数值不稳定
+这些“范数 / 条件数”，在后面“线性方程组 / 数值方法”会用很多，这里先知道矩阵层面的定义。
+2.3 推荐资料
+- 李永乐：
+  - 第 2 章：矩阵
+- 扩展：
+  - 任一矩阵论/数值线代教材里关于“矩阵范数、条件数”的段落（可后补）
+2.4 编程练习
+- Numpy：
+  - 定义矩阵 A，练习：
+    - A + B，A @ B，A.T
+    - np.linalg.inv(A)（对可逆矩阵）
+    - np.linalg.matrix_rank(A)
+  - 用 np.linalg.norm(A, 'fro') 计算 Frobenius 范数
+  - 用 np.linalg.cond(A) 看不同矩阵的条件数差异
+- Eigen：
+  - 用 MatrixXd/Matrix3d 做上面的同类运算
+  - 体会一下 API 与 Numpy 的区别
+
+---
+## 第三章 n 维向量 ⭐⭐⭐
+3.1 本章需要掌握的（对应李永乐）
+- n 维向量的定义（列向量）
+- 向量加法与数乘
+- 线性相关 / 线性无关
+- 向量组的秩
+- 线性子空间、基、维数
+- 向量组的生成（span）
+- 坐标表示：在给定基下的坐标
+- 内积与长度、夹角
+- 正交向量组、标准正交基
+这些对应我们之前的“向量空间与子空间 + 内积/范数/正交性”。
+3.2 工程/机器人扩展（补充）
+- 向量范数 ⭐⭐⭐
+  - L2、L1、L∞
+- 投影与最小二乘直觉 ⭐⭐
+  - b 投影到列空间得到 Ax ≈ b 的最好近似
+  - “最小二乘 = 最小化误差向量的 L2 范数”
+- 机器人坐标系视角 ⭐⭐
+  - 世界系 / 机体系 / 足端系，都是不同线性空间的“基”
+  - 坐标变换 = 换一个基下的向量表示
+- Jacobian 的概念预告（详细放第五章扩展）：
+  - 多元函数导数集合形成的矩阵，描述“小扰动 → 输出变化”的线性映射
+3.3 推荐资料
+- 李永乐：
+  - 第 3 章：n 维向量与向量空间
+- 额外补充：
+  - 3Blue1Brown 线代视频：向量空间、投影、最小二乘部分
+3.4 编程练习
+- Numpy：
+  - 构造若干 3 维向量，看哪些线性相关/无关：
+    - 用 np.linalg.matrix_rank 判断
+  - 实现简单的 Gram–Schmidt 正交化：输入两三个向量，输出正交向量组
+- 思考：
+  - 用一句话解释：“机器人足端在世界系/机体系下的坐标，其实就是在不同基下的同一个几何向量”。
+
+---
+## 第四章 线性方程组 ⭐⭐⭐
+4.1 本章需要掌握的（对应李永乐）
+- 线性方程组写成矩阵形式 Ax = b
+- 方程组解的情况：
+  - 唯一解 / 无穷多解 / 无解（用秩判别）
+- 齐次方程组 Ax = 0 与零空间
+- 高斯消元法
+- 逆矩阵法与 Cramer 法则（理解即可，不常用）
+- 解的结构：通解 = 特解 + 齐次解
+4.2 工程/机器人扩展（关键补充）
+4.2.1 最小二乘与超定方程 ⭐⭐⭐
+- 当方程组超定（方程多于未知数）且无严格解时：
+  - 通过最小二乘来“尽量满足”：
+    - min_x ||Ax - b||₂
+- 正规方程：
+  - (Aᵀ A) x = Aᵀ b
+- 投影视角：
+  - b 投影到 A 的列空间上
+4.2.2 伪逆（Moore–Penrose）与欠定系统 ⭐⭐⭐
+- 伪逆 A⁺ 定义（概念级）
+- 伪逆解：x = A⁺ b
+  - 在超定时：给出最小二乘解
+  - 在欠定时：给出最小范数解
+- 用途：
+  - IK 数值解（冗余机械臂/腿时）
+  - 力/扭矩分配问题
+4.2.3 数值线性代数&数值稳定性 ⭐⭐
+- LU/QR/Cholesky 分解解线性方程组（知道算法存在、用途）
+- 条件数和病态问题：
+  - cond(A) 大 → Ax = b 对 b 的微小扰动非常敏感
+- 迭代法简单概念：
+  - CG 用于 SPD 系统的大规模求解（知道存在即可）
+4.3 推荐资料
+- 李永乐：
+  - 第 4 章：线性方程组
+- 数值分析/数值线代书：
+  - 线性方程组解法（LU/QR/Cholesky/迭代）
+4.4 编程练习
+- Numpy：
+  - 构造一个超定系统，用 np.linalg.lstsq 求最小二乘解
+  - 使用 np.linalg.svd 自己构造 A_plus，验证 A_plus @ b 与 lstsq 的解一致
+  - 构造条件数很大的矩阵 A，对 b 加小扰动，看解 x 变化有多大
+- Eigen：
+  - 使用 LLT/LDLT/HouseholderQR 解同一个系统，比较效果
+- 应用思考：
+  - 写一段话解释：“四足 IK / 力分配为什么常常用最小二乘/伪逆来做”。
+
+---
+## 第五章 特征值与特征向量 ⭐⭐⭐
+5.1 本章需要掌握的（对应李永乐）
+- 特征值、特征向量定义：A v = λ v
+- 求特征多项式、求解特征值（小规模手算）
+- 几何重数、代数重数（了解）
+- 相似对角化：A = P D P⁻¹
+- 可对角化条件
+- 实对称矩阵的性质：
+  - 特征值全为实数
+  - 可以正交对角化：A = Q Λ Qᵀ
+5.2 工程/机器人扩展（重点）
+5.2.1 系统稳定性分析 ⭐⭐⭐
+- 线性系统 ẋ = A x：
+  - 特征值实部 < 0 → 渐近稳定
+- 离散系统 x_{k+1} = A x_k：
+  - |λ| < 1 → 渐近稳定
+- 用途：
+  - 控制系统（LTI）稳定性判断
+  - 线性化机器人系统后局部稳定性分析
+5.2.2 SPD 矩阵与谱定理 ⭐⭐⭐
+- SPD（对称正定）矩阵的特征值都 > 0
+- 可以写作：A = Q Λ Qᵀ，Λ 对角线为正
+- 用途：
+  - 质量矩阵 M(q) 是 SPD
+  - LQR / QP / MPC 里 cost 矩阵 Q,R 要求（半）正定
+5.2.3 SVD 与谱分解（进阶重头戏）⭐⭐⭐
+SVD 不在李永乐书的主线中，这里作为“第五章扩展”的关键补充。
+- 奇异值分解：A = U Σ Vᵀ
+- 奇异值：
+  - 非负
+  - 与 rank 和条件数关系：
+    - rank(A) = 非零奇异值个数
+    - cond(A) = σ_max / σ_min
+- 与特征分解的关系（尤其是对称矩阵）
+- 用途：
+  - 最小二乘、伪逆：A⁺ = V Σ⁺ Uᵀ
+  - 低秩近似、降维（大规模日志/仿真数据处理）
+5.3 推荐资料
+- 李永乐：
+  - 第 5 章：特征值与特征向量
+- 扩展：
+  - MIT 18.06 / 线代教材 SVD 章节
+  - 任意一本矩阵论里“SVD 与谱定理”部分
+5.4 编程练习
+- Numpy：
+  - np.linalg.eig(A)，验证 A v ≈ λ v
+  - 对称矩阵 A，看特征向量是否正交
+  - np.linalg.svd(A) 分解 A，并重构 U @ Σ @ Vᵀ，验证是否等于原矩阵
+- 应用：
+  - 利用 SVD 求最小二乘/伪逆（和第四章练习呼应）
+  - 用 SVD 做一个简单的二维点集“主方向分析”（PCA 直觉）
+
+---
+## 第六章 二次型 ⭐⭐⭐
+6.1 本章需要掌握的（对应李永乐）
+- 二次型：f(x) = xᵀ A x 的定义
+- 对称矩阵与二次型（一一对应）
+- 配方/正交变换将二次型化为标准型
+- 正定、半正定、负定、半负定、不定二次型
+  - 利用特征值判断正定性
+6.2 工程/机器人扩展（关键）
+- 正定矩阵在控制里的意义 ⭐⭐⭐
+  - LQR / MPC / QP 代价函数：
+    - J = ∑ xᵀ Q x + uᵀ R u
+    - Q、R 取对称正定确保代价“碗状”，有唯一最小值
+- 质量/惯性矩阵与能量 ⭐⭐
+  - 动能 T = 1/2 q̇ᵀ M(q) q̇ 本质上是一个二次型
+  - M SPD → 能量总是正的
+- RL 里常见的二次惩罚项：
+  - 姿态误差、速度误差、关节偏移通常写成二次型
+6.3 推荐资料
+- 李永乐：
+  - 第 6 章：二次型
+- 机器人/控制教材：
+  - LQR / MPC 章节对代价函数的讨论
+6.4 编程练习
+- Numpy：
+  - 构造一个对称矩阵 A，计算特征值，看是否正定
+  - 用 np.linalg.cholesky(A) 判断是否 SPD
+- 应用：
+  - 写一个小函数 cost(x) = x.T @ Q @ x，画 2D 等高线图（椭圆），加深对“碗状”的直觉
+  - 思考：如果 Q 不是正定，代价函数会长什么样？（可能没有下界）
+
+---
+## 附录：机器人 & RL 特别相关的补充主题
+这些在李永乐书里没有单独章节，但你在具身智能 / 四足 RL 中非常常用。可以在学完对应章节后回来补。
+## A. Jacobian 作为“导数矩阵” ⭐⭐⭐
+- 位置 Jacobian：v = J(q) q̇
+- 力 Jacobian：τ = Jᵀ(q) F
+- 线性近似：f(q + δq) ≈ f(q) + J δq
+- 与行列式、奇异姿态关系：det(J) 为 0 时姿态奇异
+建议放在第三章（n 维向量）之后学习，和“线性变换”一起理解。
+## B. 数值线性代数 / 数值稳定性 ⭐⭐
+- 矩阵范数与条件数（第二、四章扩展）
+- LU/QR/Cholesky 分解（第四章扩展）
+- 迭代法：CG/GMRES（知道名字即可）
+- 在动力学仿真 / RL 训练中的数值不稳定现象：
+  - 步长过大 → 发散
+  - Jacobian 病态 → 足端速度/力抖动
+  - 观测/奖励量纲差距过大 → 梯度爆炸/消失
