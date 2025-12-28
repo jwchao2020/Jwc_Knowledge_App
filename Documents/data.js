@@ -1,5 +1,5 @@
 const LOCAL_DATA = {
-  "version": 1766924121,
+  "version": 1766925459,
   "tree": [
     {
       "title": "0_学习路线&总览",
@@ -7,16 +7,6 @@ const LOCAL_DATA = {
         {
           "title": "0.1_四足机器人RL路线",
           "path": "content/0_学习路线&总览/0.1_四足机器人RL路线.html",
-          "type": "file"
-        },
-        {
-          "title": "0.1_四足机器人强化学习",
-          "path": "content/0_学习路线&总览/0.1_四足机器人强化学习.html",
-          "type": "file"
-        },
-        {
-          "title": "0.2_具身智能全栈知识地图",
-          "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图.html",
           "type": "file"
         },
         {
