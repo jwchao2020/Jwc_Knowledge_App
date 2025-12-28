@@ -1,5 +1,5 @@
 const LOCAL_DATA = {
-  "version": 1766913772,
+  "version": 1766923622,
   "tree": [
     {
       "title": "0_学习路线&总览",
@@ -17,41 +17,6 @@ const LOCAL_DATA = {
         {
           "title": "0.2_具身智能全栈知识地图",
           "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图.html",
-          "type": "file"
-        },
-        {
-          "title": "0.2_具身智能全栈知识地图",
-          "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图.html",
-          "type": "file"
-        }
-      ]
-    },
-    {
-      "title": "10_sim2real",
-      "children": [
-        {
-          "title": "Cpp基础",
-          "path": "content/10_sim2real/Cpp基础.html",
-          "type": "file"
-        },
-        {
-          "title": "Python基础",
-          "path": "content/10_sim2real/Python基础.html",
-          "type": "file"
-        }
-      ]
-    },
-    {
-      "title": "11_legged",
-      "children": [
-        {
-          "title": "Cpp基础",
-          "path": "content/11_legged/Cpp基础.html",
-          "type": "file"
-        },
-        {
-          "title": "Python基础",
-          "path": "content/11_legged/Python基础.html",
           "type": "file"
         }
       ]
@@ -207,6 +172,36 @@ const LOCAL_DATA = {
         {
           "title": "Python基础",
           "path": "content/9_simulator/Python基础.html",
+          "type": "file"
+        }
+      ]
+    },
+    {
+      "title": "10_sim2real",
+      "children": [
+        {
+          "title": "Cpp基础",
+          "path": "content/10_sim2real/Cpp基础.html",
+          "type": "file"
+        },
+        {
+          "title": "Python基础",
+          "path": "content/10_sim2real/Python基础.html",
+          "type": "file"
+        }
+      ]
+    },
+    {
+      "title": "11_legged",
+      "children": [
+        {
+          "title": "Cpp基础",
+          "path": "content/11_legged/Cpp基础.html",
+          "type": "file"
+        },
+        {
+          "title": "Python基础",
+          "path": "content/11_legged/Python基础.html",
           "type": "file"
         }
       ]
