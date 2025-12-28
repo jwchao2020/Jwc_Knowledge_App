@@ -4,6 +4,7 @@ import shutil
 import time
 import mammoth
 import markdown
+import re  # 🟢 新增：引入正则模块处理自然排序
 
 # === 配置 ===
 SOURCE_DIR = "source_word"  # 你的源文件目录
@@ -15,13 +16,23 @@ if os.path.exists(OUTPUT_DIR):
     shutil.rmtree(OUTPUT_DIR)
 os.makedirs(OUTPUT_DIR)
 
+# 🟢 新增：自然排序辅助函数
+def natural_sort_key(s):
+    """
+    将字符串拆分为文字和数字的混合列表，用于自然排序。
+    例如: "2_abc" -> [2, "_abc"]
+         "10_abc" -> [10, "_abc"]
+    这样 2 就会排在 10 前面
+    """
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split('([0-9]+)', s)]
+
 def convert_docx(src_path, dest_path):
     """转换 Docx -> HTML"""
     try:
         with open(src_path, "rb") as docx_file:
             result = mammoth.convert_to_html(docx_file)
             html = result.value
-            # 简单的样式美化
             html = f"""
             <html><head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,7 +57,6 @@ def convert_md(src_path, dest_path):
         with open(src_path, "r", encoding="utf-8") as f:
             text = f.read()
             html = markdown.markdown(text, extensions=['tables', 'fenced_code'])
-            # 简单的样式美化
             html = f"""
             <html><head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,17 +79,18 @@ def convert_md(src_path, dest_path):
 def process_directory(current_src, current_dest, relative_root=""):
     """
     递归处理文件夹
-    current_src: 当前源文件夹路径
-    current_dest: 当前目标文件夹路径
-    relative_root: 用于生成 URL 的相对路径
     """
     nodes = []
     
-    # 获取当前目录下的所有条目，并排序（保证 0_, 1_ 顺序正确）
+    # 获取当前目录下的所有条目
     try:
-        items = sorted(os.listdir(current_src))
+        items = os.listdir(current_src)
     except FileNotFoundError:
         return []
+
+    # 🟢 修改：使用 natural_sort_key 进行排序
+    # 这样 "2_xx" 会排在 "10_xx" 前面
+    items = sorted(items, key=natural_sort_key)
 
     for item in items:
         # 忽略隐藏文件
@@ -91,18 +102,15 @@ def process_directory(current_src, current_dest, relative_root=""):
         
         # === 情况 1: 是文件夹 ===
         if os.path.isdir(src_path):
-            # 在 content 下创建对应的文件夹
             if not os.path.exists(dest_path):
                 os.makedirs(dest_path)
             
-            # 递归处理子目录！
             children = process_directory(src_path, dest_path, os.path.join(relative_root, item))
             
-            # 只有当文件夹里有内容时，才添加到目录树
             if children:
                 nodes.append({
-                    "title": item,  # 文件夹名字
-                    "children": children # 子节点列表
+                    "title": item,
+                    "children": children
                 })
         
         # === 情况 2: 是文件 ===
@@ -133,10 +141,8 @@ def process_directory(current_src, current_dest, relative_root=""):
                     })
             
             elif ext == ".pdf":
-                # PDF 不转换，直接复制
                 print(f"📑 复制 PDF: {item}")
                 shutil.copy2(src_path, dest_path)
-                # PDF 保持原名
                 web_path_pdf = "content/" + os.path.join(relative_root, item).replace("\\", "/")
                 nodes.append({
                     "title": file_name,
