@@ -2,152 +2,419 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Jwc 知识库</title>
+    <meta name="theme-color" content="#96b97d">
     
     <script src="lib/pdfjs/pdf.min.js"></script>
 
     <style>
-        :root { --primary: #007bff; --bg: #f8f9fa; --text: #333; --card: #fff; --line: #eee; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; }
-
-        /* === 列表页 === */
-        #home-view { height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        
-        header { 
-            background: var(--primary); color: white; padding: 15px; 
-            position: sticky; top: 0; z-index: 100;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        /* === 1. 基础配色与变量 === */
+        :root {
+            --primary: #96b97d;       /* 主题绿 */
+            --primary-dark: #759161;
+            --bg-sidebar: #f7f7f7;    /* 侧边栏浅灰 */
+            --bg-content: #ffffff;
+            --text-main: #333333;
+            --text-light: #666666;
+            --border: #e0e0e0;
+            --selected-bg: #ffffff;   /* 选中背景 */
+            --header-height: 50px;
+            --sidebar-width: 260px;
+            --transition-speed: 0.3s;
         }
-        .app-title { font-weight: bold; font-size: 18px; }
-        .version-tag { font-size: 12px; opacity: 0.8; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px; }
 
-        .node { background: var(--card); border-bottom: 1px solid var(--line); }
-        .node-title { padding: 16px; display: flex; align-items: center; cursor: pointer; transition: background 0.2s; }
-        .node-title:active { background: #f0f0f0; }
-        .icon { margin-right: 12px; font-size: 20px; }
-        .text { flex: 1; font-size: 16px; font-weight: 500; }
-        .arrow { color: #999; font-size: 12px; transition: transform 0.3s; }
-        .children { display: none; padding-left: 20px; background: #f9f9f9; border-top: 1px solid var(--line); }
-        .children.show { display: block; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        body {
+            font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+            background: var(--bg-content);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* === 图标系统样式 === */
+        .svg-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+            transition: transform 0.2s;
+            fill: currentColor; 
+        }
+        
+        /* 特定图标颜色定义 */
+        .icon-folder { color: #FFC107; } /* 文件夹黄 */
+        .icon-pdf { color: #FF5252; }    /* PDF 红 */
+        .icon-web { color: #03A9F4; }    /* Web 蓝 */
+        .icon-img { color: #AB47BC; }    /* 图片紫 */
+        .icon-video { color: #FF7043; }  /* 视频橙 */
+        .icon-code { color: #546E7A; }   /* 代码灰蓝 */
+        .icon-doc { color: #4CAF50; }    /* 文档绿 */
+        .icon-default { color: #78909C; } /* 默认灰 */
+        .icon-back { color: #607D8B; }    /* 返回按钮灰 */
+
+        .node-title.active .svg-icon { transform: scale(1.1); }
+
+        /* === 2. 左侧侧边栏 (导航栏) === */
+        #home-view {
+            width: var(--sidebar-width);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            z-index: 20;
+            flex-shrink: 0;
+            transition: transform var(--transition-speed) ease, width var(--transition-speed) ease;
+            white-space: nowrap;
+        }
+
+        body.sidebar-hidden #home-view {
+            width: 0;
+            border-right: none;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 767px) {
+            #home-view {
+                position: absolute; top: 0; left: 0; width: 100%;
+                transform: translateX(0);
+            }
+            body.mobile-reader-mode #home-view {
+                transform: translateX(-100%);
+            }
+            body.sidebar-hidden #home-view {
+                width: 100%;
+            }
+        }
+
+        .sidebar-header {
+            background: var(--primary);
+            color: white;
+            padding: 0 16px;
+            height: var(--header-height);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        #file-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .node-title {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+            color: var(--text-main);
+            border-left: 4px solid transparent;
+            user-select: none;
+            line-height: 1.5;
+        }
+        .node-title:hover { background: rgba(0,0,0,0.03); }
+        .node-title.active {
+            background: var(--selected-bg);
+            color: var(--primary-dark);
+            border-left-color: var(--primary);
+            font-weight: 500;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .arrow { margin-left: auto; font-size: 10px; color: #ccc; transition: transform 0.2s; }
         .arrow.rotate { transform: rotate(90deg); }
+        .children { display: none; }
+        .children.show { display: block; }
 
-        /* === 阅读器通用 === */
-        .viewer-container {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 200; flex-direction: column; background: white;
+        /* === 3. 右侧内容区 === */
+        #content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-content);
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+            z-index: 10;
         }
 
-        .reader-bar {
-            background: #333; color: white; padding: 10px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 201; flex-shrink: 0;
+        .viewer-toolbar {
+            height: var(--header-height);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            background: #fff;
+            flex-shrink: 0;
+            justify-content: space-between;
+            z-index: 15;
         }
-        .reader-title { font-size: 14px; max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .btn { background: #555; border: none; color: white; padding: 6px 12px; border-radius: 4px; font-size: 14px; }
+
+        .doc-title {
+            font-size: 16px; font-weight: 600; color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .toolbar-btn {
+            background: transparent; border: none; color: var(--text-light);
+            padding: 6px 10px; border-radius: 4px; font-size: 14px;
+            cursor: pointer; display: flex; align-items: center;
+            transition: all 0.2s;
+        }
+        .toolbar-btn:hover { background: #f5f5f5; color: var(--primary); }
+
+        /* === 4. 主页网格视图 (Grid View) === */
+        #home-grid {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-auto-rows: max-content;
+            gap: 20px;
+            background: #fafafa;
+            align-content: start;
+        }
+
+        /* 基础卡片样式 */
+        .grid-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px 20px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+        .grid-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border-color: var(--primary);
+        }
+        .grid-card:active { transform: scale(0.98); }
         
-        /* HTML iframe */
-        .iframe-box { flex: 1; width: 100%; border: none; background: white; }
+        .card-icon {
+            width: 56px; height: 56px;
+            margin-bottom: 15px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 16px;
+            background: #f5f5f5; 
+            transition: all 0.2s;
+        }
+        .card-icon .svg-icon { width: 32px; height: 32px; margin: 0; }
+        .card-title { font-size: 15px; font-weight: 600; color: #333; line-height: 1.4; word-break: break-all;}
+        .card-type { font-size: 12px; color: #999; margin-top: 8px; }
 
-        /* PDF View */
-        #pdf-view { background: #525659; }
-        #pdf-scroll-container { flex: 1; overflow: auto; padding: 20px; position: relative; touch-action: pan-x pan-y; }
-        .pdf-page { margin: 0 auto 15px auto; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 100%; }
-        .loading-box { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center; }
+        /* === 列表模式 (List View) === */
+        #home-grid.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+        }
 
-        /* 错误弹窗 */
-        #error-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 999; padding: 20px; box-sizing: border-box;
-            color: #ff6b6b; font-family: monospace; white-space: pre-wrap; word-break: break-all; overflow: auto;
+        #home-grid.list-view .grid-card {
+            flex-direction: row;
+            align-items: center;
+            text-align: left;
+            padding: 12px 20px;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        
+        #home-grid.list-view .grid-card:hover {
+            transform: translateX(5px);
+            background-color: #fcfcfc;
+        }
+
+        #home-grid.list-view .card-icon {
+            width: 40px; height: 40px;
+            margin-bottom: 0;
+            margin-right: 16px;
+            border-radius: 8px;
+        }
+        #home-grid.list-view .card-icon .svg-icon { width: 22px; height: 22px; }
+
+        #home-grid.list-view .card-title { flex: 1; font-size: 15px; }
+        #home-grid.list-view .card-type {
+            margin-top: 0; margin-left: 20px; width: 100px;
+            text-align: right; font-family: monospace; opacity: 0.6;
+        }
+
+        /* 内容容器 */
+        #iframe-container, #pdf-container {
+            flex: 1; display: none; width: 100%; height: 100%; position: relative;
+        }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        #pdf-scroll-box { width: 100%; height: 100%; overflow: auto; background: #525659; padding: 30px 0; text-align: center; }
+        .pdf-page { box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 20px; background: white; display: inline-block; vertical-align: top; }
+
+        #fab-menu-btn {
+            position: fixed; bottom: 24px; left: 24px; width: 48px; height: 48px;
+            background: var(--primary); color: white; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none; align-items: center; justify-content: center;
+            z-index: 100; cursor: pointer; transition: transform 0.2s, background 0.2s;
+        }
+        #fab-menu-btn:active { transform: scale(0.95); }
+        #fab-menu-btn:hover { background: var(--primary-dark); }
+        #fab-menu-btn svg { width: 24px; height: 24px; fill: white; margin: 0; }
+
+        .loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 50; color: var(--primary);
+        }
+
+        @media (max-width: 767px) {
+            #home-grid { padding: 15px; gap: 15px; grid-template-columns: repeat(2, 1fr); }
+            #home-grid.list-view { padding: 10px; gap: 8px; }
+            #home-grid.list-view .grid-card { padding: 10px 12px; }
+            #home-grid.list-view .card-type { display: none; }
+            
+            .grid-card { padding: 15px 10px; }
+            .card-icon { width: 40px; height: 40px; margin-bottom: 10px; }
+            .card-icon .svg-icon { width: 24px; height: 24px; }
+            .card-title { font-size: 13px; }
+            #fab-menu-btn { bottom: 20px; left: 20px; width: 44px; height: 44px; }
         }
     </style>
 </head>
 <body>
 
+    <svg style="display:none">
+        <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></symbol>
+        <symbol id="icon-folder-open" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></symbol>
+        <symbol id="icon-pdf" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5v1.5H19v2.5h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></symbol>
+        <symbol id="icon-web" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></symbol>
+        <symbol id="icon-image" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></symbol>
+        <symbol id="icon-video" viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></symbol>
+        <symbol id="icon-code" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></symbol>
+        <symbol id="icon-doc" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></symbol>
+        <symbol id="icon-default" viewBox="0 0 24 24"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></symbol>
+        <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></symbol>
+        <symbol id="icon-back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></symbol>
+    </svg>
+
     <div id="home-view">
-        <header>
-            <div class="app-title">📚 知识库</div>
-            <div id="version-display" class="version-tag">Loading...</div>
+        <header class="sidebar-header">
+            <div style="font-size:18px; font-weight:bold; display:flex; align-items:center; gap:10px;">
+                <svg class="svg-icon icon-folder" style="color:white;width:24px;height:24px;"><use href="#icon-folder-open"></use></svg>
+                Jwc 知识库
+            </div>
+            <div id="version-display" style="font-size:12px; opacity:0.8; background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:4px;">Loading...</div>
         </header>
-        <div id="file-list"></div>
-    </div>
-
-    <div id="iframe-view" class="viewer-container">
-        <div class="reader-bar">
-            <button class="btn" onclick="closeReader()">❮ 返回</button>
-            <span class="reader-title" id="iframe-title">文档</span>
-            <div style="width:40px"></div>
+        <div id="file-list">
+            <div style="padding:20px; text-align:center; color:#999; font-size:13px;">加载中...</div>
         </div>
-        <iframe id="content-iframe" class="iframe-box" src=""></iframe>
     </div>
 
-    <div id="pdf-view" class="viewer-container">
-        <div class="reader-bar">
-            <button class="btn" onclick="closeReader()">❮ 返回</button>
-            <span class="reader-title" id="pdf-title">PDF</span>
-            <div>
-                <button class="btn" onclick="changeZoom(-0.2)">－</button>
-                <button class="btn" onclick="changeZoom(0.2)">＋</button>
+    <div id="content-area">
+        <div class="viewer-toolbar" id="top-toolbar" style="display:none">
+            <div style="display:flex; align-items:center; gap:10px; flex:1; overflow:hidden;">
+                <button class="toolbar-btn" style="padding:4px;" onclick="toggleSidebar()" title="切换侧边栏">
+                    <svg class="svg-icon" style="margin:0;color:#666"><use href="#icon-menu"></use></svg>
+                </button>
+                <span class="doc-title" id="doc-title">文档标题</span>
+            </div>
+
+            <div id="pdf-tools" style="display:none; align-items:center; gap:5px;">
+                <button class="toolbar-btn" onclick="changeZoom(-0.2)">－</button>
+                <span id="zoom-level" style="font-size:12px; min-width:36px; text-align:center;">100%</span>
+                <button class="toolbar-btn" onclick="changeZoom(0.2)">＋</button>
             </div>
         </div>
-        <div id="pdf-scroll-container">
-            <div id="pdf-content-wrapper"></div>
+
+        <div id="home-grid">
+            </div>
+
+        <div id="iframe-container">
+            <iframe id="content-iframe" src=""></iframe>
         </div>
-        <div id="loading-box" class="loading-box" style="display:none">
-            <div style="font-size:24px; margin-bottom:10px;">⏳</div>
-            <div id="loading-text">加载中...</div>
+
+        <div id="pdf-container">
+            <div id="pdf-scroll-box">
+                <div id="pdf-content-wrapper"></div>
+            </div>
+            <div id="pdf-loading" class="loading-overlay" style="display:none;">
+                <div style="font-size:30px; margin-bottom:10px;">⏳</div>
+                <span id="pdf-loading-text">正在渲染 PDF...</span>
+            </div>
         </div>
     </div>
 
-    <div id="error-modal"></div>
+    <div id="fab-menu-btn" onclick="toggleSidebarFromFab()" title="打开目录">
+        <svg><use href="#icon-menu"></use></svg>
+    </div>
 
     <script src="data.js"></script>
 
 <script>
-    // === 0. ☁️ 在线更新配置 (请修改为你的仓库信息) ===
+    // === 0. ☁️ 在线更新配置 ===
     const USER = 'jwchao2020';
     const REPO = 'Jwc_Knowledge_App';
-    const BRANCH = 'gh-pages'; // 必须是 gh-pages 分支
+    const BRANCH = 'gh-pages';
     const CDN_ROOT = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}/Documents/`;
+    
+    let useOnline = false;
+    let currentScale = 1.0;
+    
+    // === 导航栈 ===
+    let gridHistory = [];
 
-    let useOnline = false; // 标记当前是否使用在线数据
-
-    // === 1. 初始化 PDF Worker ===
+    // PDF Worker 配置
     if (typeof pdfjsLib !== 'undefined') {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
-    } else {
-        showError("严重错误: pdfjsLib 未加载。\n请检查 lib/pdfjs/pdf.min.js 是否存在。");
     }
 
-    // === 2. 核心逻辑 ===
-    const homeView = document.getElementById('home-view');
-    const iframeView = document.getElementById('iframe-view');
-    const pdfView = document.getElementById('pdf-view');
-    const fileListEl = document.getElementById('file-list');
-    let lastScrollY = 0;
-    let currentScale = 1.0;
+    // === 💡 智能图标匹配 ===
+    function getFileIconInfo(title, path) {
+        const p = (path || '').toLowerCase();
+        const t = title.toLowerCase();
 
-    // 智能获取数据节点
-    function getRootNodes(dataObj) {
-        if (!dataObj) return null;
-        if (dataObj.version) {
-            const verText = useOnline ? `🟢 在线 v${dataObj.version}` : `⚪ 离线 v${dataObj.version}`;
-            document.getElementById('version-display').innerText = verText;
-        }
-
-        if (Array.isArray(dataObj.tree)) return dataObj.tree;
-        if (Array.isArray(dataObj.list)) return dataObj.list; // 兼容不同脚本生成的字段
-        if (Array.isArray(dataObj)) return dataObj;
-        return null;
-    }
-
-    // 渲染目录树
-    function renderTree(nodes, container) {
-        container.innerHTML = ''; // 清空旧数据
-        if (!nodes) return;
+        // 1. 基于后缀
+        if (p.endsWith('.pdf')) return { id: '#icon-pdf', class: 'icon-pdf' };
+        if (p.endsWith('.html') || p.endsWith('.htm')) return { id: '#icon-web', class: 'icon-web' };
+        if (/\.(jpg|jpeg|png|gif|svg|webp)$/.test(p)) return { id: '#icon-image', class: 'icon-img' };
+        if (/\.(mp4|mov|avi|mkv)$/.test(p)) return { id: '#icon-video', class: 'icon-video' };
+        if (/\.(js|py|c|cpp|java|html|css|json)$/.test(p)) return { id: '#icon-code', class: 'icon-code' };
         
+        // 2. 基于标题
+        if (/数学|math/.test(t)) return { id: '#icon-doc', class: 'icon-doc' };
+        if (/图片|相册|gallery/.test(t)) return { id: '#icon-image', class: 'icon-img' };
+        if (/视频|录像|video/.test(t)) return { id: '#icon-video', class: 'icon-video' };
+        if (/代码|编程|code/.test(t)) return { id: '#icon-code', class: 'icon-code' };
+        if (/笔记|note|文档/.test(t)) return { id: '#icon-doc', class: 'icon-doc' };
+        if (/网站|链接|link/.test(t)) return { id: '#icon-web', class: 'icon-web' };
+
+        // 3. 默认
+        return { id: '#icon-default', class: 'icon-default' };
+    }
+
+    // === 1. 核心渲染逻辑 ===
+    function renderTree(nodes, container, level = 0) {
+        container.innerHTML = '';
+        if (!nodes || nodes.length === 0) return;
+
         nodes.forEach(node => {
             const title = node.title || node.name || "未命名";
             const path = node.path || node.url || node.link; 
@@ -155,27 +422,28 @@
 
             const div = document.createElement('div');
             div.className = 'node';
+            const paddingLeft = 16 + level * 18;
 
             if (isFolder) {
                 const uid = 'folder-' + Math.random().toString(36).substr(2, 9);
                 div.innerHTML = `
-                    <div class="node-title" onclick="toggleFolder('${uid}', this)">
-                        <span class="icon">📂</span>
-                        <span class="text">${title}</span>
+                    <div class="node-title" style="padding-left:${paddingLeft}px" onclick="toggleFolder('${uid}', this)">
+                        <svg class="svg-icon icon-folder folder-icon-ref"><use href="#icon-folder"></use></svg>
+                        <span style="flex:1">${title}</span>
                         <span class="arrow">▶</span>
                     </div>
                     <div class="children" id="${uid}"></div>
                 `;
                 container.appendChild(div);
-                renderTree(node.children || node.items, div.querySelector('.children'));
+                renderTree(node.children || node.items, div.querySelector('.children'), level + 1);
             } else {
                 const isPdf = path && path.toLowerCase().endsWith('.pdf');
-                const icon = isPdf ? '📄' : '🌐';
-                // 🟢 关键修改：传入相对路径，openFile 会负责拼接 CDN 前缀
+                const iconInfo = getFileIconInfo(title, path);
+                
                 div.innerHTML = `
-                    <div class="node-title" onclick="openFile('${path}', '${title}', ${isPdf})">
-                        <span class="icon">${icon}</span>
-                        <span class="text">${title}</span>
+                    <div class="node-title item-link" style="padding-left:${paddingLeft}px" onclick="handleFileClick(this, '${path}', '${title}', ${isPdf})">
+                        <svg class="svg-icon ${iconInfo.class}"><use href="${iconInfo.id}"></use></svg>
+                        <span>${title}</span>
                     </div>
                 `;
                 container.appendChild(div);
@@ -183,159 +451,292 @@
         });
     }
 
-    window.toggleFolder = function(id, headerEl) {
+    // === 2. 渲染主页网格 (支持 Grid/List 模式切换) ===
+    function renderHomeGrid(nodes) {
+        const grid = document.getElementById('home-grid');
+        grid.innerHTML = '';
+        
+        // 核心判断：如果有历史记录（说明点进去了），就切换为 List 模式
+        const isDeep = gridHistory.length > 0;
+        if (isDeep) {
+            grid.classList.add('list-view');
+        } else {
+            grid.classList.remove('list-view');
+        }
+
+        // 渲染“返回上一级”按钮
+        if (isDeep) {
+            const backCard = document.createElement('div');
+            backCard.className = 'grid-card';
+            backCard.style.borderStyle = 'dashed'; 
+            backCard.style.justifyContent = 'center';
+            
+            backCard.onclick = () => {
+                const parentNodes = gridHistory.pop();
+                renderHomeGrid(parentNodes);
+            };
+
+            backCard.innerHTML = `
+                <div class="card-icon" style="background:#e0e0e0">
+                    <svg class="svg-icon icon-back" style="margin:0"><use href="#icon-back"></use></svg>
+                </div>
+                <div class="card-title">返回上一级...</div>
+            `;
+            grid.appendChild(backCard);
+        }
+
+        if (!nodes || nodes.length === 0) {
+            if (gridHistory.length === 0) {
+                 grid.innerHTML = '<div style="text-align:center; width:100%; color:#999; margin-top:50px;">暂无内容</div>';
+            }
+            return;
+        }
+
+        nodes.forEach(node => {
+            const title = node.title || node.name || "未命名";
+            const path = node.path || node.url || node.link;
+            const isFolder = !path && (node.children || node.items);
+            
+            // 获取图标信息
+            let iconId, iconClass, bgColor;
+            if (isFolder) {
+                iconId = '#icon-folder';
+                iconClass = 'icon-folder';
+                bgColor = '#fff8e1';
+            } else {
+                const info = getFileIconInfo(title, path);
+                iconId = info.id;
+                iconClass = info.class;
+                bgColor = '#f5f5f5'; 
+            }
+
+            const card = document.createElement('div');
+            card.className = 'grid-card';
+            
+            card.onclick = () => {
+                if (isFolder) {
+                    // 进入子目录 -> 触发 List 模式
+                    gridHistory.push(nodes); 
+                    renderHomeGrid(node.children || node.items); 
+                } else {
+                    // 🟢 关键：自动拼接在线路径
+                    const fullPath = useOnline ? (CDN_ROOT + path) : path;
+                    openViewer(fullPath, title, path && path.toLowerCase().endsWith('.pdf'));
+                }
+            };
+
+            // 获取文件类型/大小信息
+            let fileTypeStr = "";
+            if (isFolder) {
+                const count = (node.children||node.items||[]).length;
+                fileTypeStr = `${count} 项`;
+            } else if (path) {
+                const ext = path.split('.').pop();
+                fileTypeStr = ext.toUpperCase();
+            }
+
+            card.innerHTML = `
+                <div class="card-icon" style="background:${bgColor}">
+                    <svg class="svg-icon ${iconClass}"><use href="${iconId}"></use></svg>
+                </div>
+                <div class="card-title">${title}</div>
+                <div class="card-type">${fileTypeStr}</div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // === 3. 交互逻辑 ===
+    window.toggleFolder = function(id, titleEl) {
         const content = document.getElementById(id);
-        const arrow = headerEl.querySelector('.arrow');
+        const arrow = titleEl.querySelector('.arrow');
+        const iconUse = titleEl.querySelector('.folder-icon-ref use');
+        
         if (content.classList.contains('show')) {
             content.classList.remove('show');
             arrow.classList.remove('rotate');
+            if (iconUse) iconUse.setAttribute('href', '#icon-folder');
         } else {
             content.classList.add('show');
             arrow.classList.add('rotate');
+            if (iconUse) iconUse.setAttribute('href', '#icon-folder-open');
         }
     };
 
-    // 🟢 关键修改：打开文件时自动拼接在线 URL
-    window.openFile = function(relativePath, title, isPdf) {
-        if (!relativePath) return alert("路径为空");
-        
-        // 如果是在线模式，这就拼接成 https://cdn.../content/xxx.html
-        // 如果是离线模式，这就是 content/xxx.html (本地相对路径)
+    window.handleFileClick = function(el, relativePath, title, isPdf) {
+        document.querySelectorAll('.node-title').forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
+        // 🟢 关键：自动拼接在线路径
         const fullPath = useOnline ? (CDN_ROOT + relativePath) : relativePath;
+        openViewer(fullPath, title, isPdf);
+    };
+
+    function openViewer(path, title, isPdf) {
+        document.getElementById('doc-title').innerText = title;
         
-        lastScrollY = homeView.scrollTop;
-        homeView.style.display = 'none';
-        history.pushState({view: 'reader'}, null, '#reader');
+        document.getElementById('home-grid').style.display = 'none';
+        document.getElementById('top-toolbar').style.display = 'flex';
+        document.getElementById('fab-menu-btn').style.display = 'flex';
+        
+        document.body.classList.add('mobile-reader-mode'); 
+
+        document.getElementById('iframe-container').style.display = 'none';
+        document.getElementById('pdf-container').style.display = 'none';
+        document.getElementById('pdf-tools').style.display = 'none';
+        document.getElementById('content-iframe').src = '';
+        document.getElementById('pdf-content-wrapper').innerHTML = '';
 
         if (isPdf) {
-            openPdfViewer(fullPath, title);
+            openPdf(path);
         } else {
-            openHtmlViewer(fullPath, title);
+            document.getElementById('iframe-container').style.display = 'block';
+            document.getElementById('content-iframe').src = path;
         }
-    };
-
-    function openHtmlViewer(path, title) {
-        iframeView.style.display = 'flex';
-        document.getElementById('iframe-title').innerText = title;
-        document.getElementById('content-iframe').src = path;
     }
 
-    async function openPdfViewer(path, title) {
-        pdfView.style.display = 'flex';
-        document.getElementById('pdf-title').innerText = title;
-        document.getElementById('pdf-content-wrapper').innerHTML = '';
-        document.getElementById('loading-box').style.display = 'block';
+    window.toggleSidebarFromFab = function() {
+        if (window.innerWidth <= 767) {
+            document.body.classList.toggle('mobile-reader-mode');
+        } else {
+            document.body.classList.toggle('sidebar-hidden');
+        }
+    }
+
+    window.toggleSidebar = function() {
+        if (window.innerWidth <= 767) {
+            document.body.classList.toggle('mobile-reader-mode');
+        } else {
+            document.body.classList.toggle('sidebar-hidden');
+        }
+    }
+
+    // === PDF 逻辑 (增强版：防卡顿) ===
+    async function openPdf(path) {
+        const container = document.getElementById('pdf-container');
+        document.getElementById('pdf-tools').style.display = 'flex';
+        const loadingEl = document.getElementById('pdf-loading');
+        loadingEl.style.display = 'flex';
+        document.getElementById('pdf-loading-text').innerText = "加载文档...";
+        
+        container.style.display = 'block';
         currentScale = 1.0;
-        updatePdfZoom();
+        updateZoomText();
 
         try {
             const loadingTask = pdfjsLib.getDocument(path);
+            
             loadingTask.onProgress = (p) => {
                 const percent = Math.round((p.loaded / p.total) * 100);
-                if (!isNaN(percent)) document.getElementById('loading-text').innerText = `加载 ${percent}%`;
+                if (!isNaN(percent)) document.getElementById('pdf-loading-text').innerText = `加载 ${percent}%`;
             };
+
             const pdf = await loadingTask.promise;
+            document.getElementById('pdf-loading-text').innerText = "正在渲染...";
+
             for (let i = 1; i <= pdf.numPages; i++) {
                 await renderPdfPage(pdf, i);
-                if (i % 3 === 0) await new Promise(r => setTimeout(r, 50));
+                if (i === 1) loadingEl.style.display = 'none'; // 第一页渲染完就隐藏加载层
+                // 🟢 关键优化：每渲染 5 页暂停 50ms，释放主线程，防止手机死机
+                if (i % 5 === 0) await new Promise(r => setTimeout(r, 50));
             }
-            document.getElementById('loading-box').style.display = 'none';
+            loadingEl.style.display = 'none';
         } catch (err) {
             console.error(err);
-            alert("PDF 加载失败: " + err.message);
-            closeReader();
+            document.getElementById('pdf-loading-text').innerText = "加载失败: " + err.message;
         }
     }
 
     async function renderPdfPage(pdf, num) {
         const page = await pdf.getPage(num);
-        const viewport = page.getViewport({ scale: 1.0 });
+        const viewportRaw = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewportRaw.width;
+        canvas.height = viewportRaw.height;
+        
+        // 适配屏幕宽度
+        const containerW = document.getElementById('pdf-scroll-box').clientWidth - 40;
+        const targetW = Math.min(containerW, 800); 
+        const displayW = (targetW / viewportRaw.width) * viewportRaw.width;
+        const displayH = (targetW / viewportRaw.width) * viewportRaw.height;
+
+        canvas.style.width = displayW + 'px';
+        canvas.style.height = displayH + 'px';
+
         const div = document.createElement('div');
         div.className = 'pdf-page';
-        div.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
+        div.appendChild(canvas);
         document.getElementById('pdf-content-wrapper').appendChild(div);
-        const opList = await page.getOperatorList();
-        const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
-        const svg = await svgGfx.getSVG(opList, viewport);
-        svg.style.width = "100%"; svg.style.height = "100%";
-        div.appendChild(svg);
+
+        await page.render({ canvasContext: context, viewport: viewportRaw }).promise;
     }
 
     window.changeZoom = function(delta) {
         currentScale += delta;
-        if (currentScale < 0.5) currentScale = 0.5;
-        if (currentScale > 3.0) currentScale = 3.0;
-        updatePdfZoom();
-    };
-
-    function updatePdfZoom() {
+        if (currentScale < 0.4) currentScale = 0.4;
+        if (currentScale > 2.5) currentScale = 2.5;
         const wrapper = document.getElementById('pdf-content-wrapper');
-        wrapper.style.width = `${currentScale * 100}%`;
-        wrapper.style.margin = currentScale <= 1.0 ? "0 auto" : "0";
-    }
-
-    window.closeReader = function(isHardwareBack = false) {
-        if (!isHardwareBack) history.back();
-        iframeView.style.display = 'none';
-        pdfView.style.display = 'none';
-        homeView.style.display = 'block';
-        document.getElementById('content-iframe').src = '';
-        document.getElementById('pdf-content-wrapper').innerHTML = '';
-        homeView.scrollTop = lastScrollY;
+        wrapper.style.transform = `scale(${currentScale})`;
+        wrapper.style.transformOrigin = 'top center';
+        updateZoomText();
     };
 
-    window.addEventListener('popstate', () => {
-        if (iframeView.style.display === 'flex' || pdfView.style.display === 'flex') {
-            closeReader(true);
-        }
-    });
-
-    function showError(msg) {
-        const el = document.getElementById('error-modal');
-        el.style.display = 'block';
-        el.innerText += "\n================\n" + msg;
+    function updateZoomText() {
+        document.getElementById('zoom-level').innerText = Math.round(currentScale * 100) + '%';
     }
 
-    // === 3. 🟢 启动逻辑 (包含在线检查) ===
+    // === 初始化逻辑 ===
+    function getRootNodes(data) {
+        if(!data) return null;
+        if (data.version) {
+            const vText = useOnline ? `🟢 v${data.version}` : `⚪ v${data.version}`;
+            document.getElementById('version-display').innerText = vText;
+        }
+        return data.tree || data.list || (Array.isArray(data) ? data : null);
+    }
+
     async function init() {
-        // 1. 先加载本地数据
+        // 1. 加载本地数据
+        let data = null;
         if (typeof LOCAL_DATA !== 'undefined') {
-            const data = getRootNodes(LOCAL_DATA);
-            if (data) renderTree(data, fileListEl);
-        } else {
-            showError("离线数据 data.js 加载失败");
+            data = getRootNodes(LOCAL_DATA);
         }
 
-        // 2. 尝试联网检查更新
+        // 2. 尝试在线更新
         try {
-            console.log("Checking update from:", CDN_ROOT + 'data.js');
-            const res = await fetch(CDN_ROOT + 'data.js');
+            console.log("正在检查更新...");
+            const res = await fetch(CDN_ROOT + 'data.js?t=' + Date.now());
             if (res.ok) {
                 const txt = await res.text();
-                // 提取 JSON
-                const jsonStr = txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1);
-                const remoteData = JSON.parse(jsonStr);
+                // 🟢 健壮的 JSON 提取正则：匹配 const LOCAL_DATA = {...}
+                const match = txt.match(/const\s+LOCAL_DATA\s*=\s*(\{[\s\S]*\});?/);
                 
-                const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version) : 0;
-                const remoteVer = Number(remoteData.version);
-
-                // 如果远程版本更新，切换到在线模式
-                if (remoteVer > localVer) {
-                    useOnline = true; // 标记为在线
-                    const newData = getRootNodes(remoteData);
-                    if (newData) {
-                        console.log("发现新版本，切换至在线数据");
-                        renderTree(newData, fileListEl);
+                if (match && match[1]) {
+                    const remoteData = JSON.parse(match[1]);
+                    const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version || 0) : 0;
+                    
+                    if (Number(remoteData.version) > localVer) {
+                        console.log("发现新版本，切换至在线模式");
+                        useOnline = true;
+                        data = getRootNodes(remoteData);
                         
-                        // 提示用户
-                        const tag = document.getElementById('version-display');
-                        tag.style.background = '#d4edda';
-                        tag.style.color = '#155724';
+                        // 提示升级成功
+                        const verTag = document.getElementById('version-display');
+                        verTag.style.background = '#e8f5e9';
+                        verTag.style.color = '#2e7d32';
                     }
                 }
             }
-        } catch (e) {
-            console.log("无法连接在线更新，保持离线模式", e);
+        } catch(e) {
+            console.log("在线更新检查失败，保持离线模式", e);
+        }
+
+        // 3. 渲染
+        if (data) {
+            renderTree(data, document.getElementById('file-list'));
+            renderHomeGrid(data);
+        } else {
+            document.getElementById('file-list').innerHTML = '<div style="padding:20px;text-align:center;">暂无数据</div>';
         }
     }
 
