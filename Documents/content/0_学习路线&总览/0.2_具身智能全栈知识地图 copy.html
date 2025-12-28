@@ -1,0 +1,454 @@
+<div class="doc-container"><p>传统运控： 1、2、3、4、7、9、10、11</p>
+<p>具身智能机器人学习总线
+1. 数学与物理基础（Foundations）
+1.1 线性代数（必修 · 控制 &amp; RL 基石）
+向量/矩阵运算
+点乘、叉乘、Hadamard product
+范数（L1/L2/Frobenius）
+向量/矩阵的几何意义（投影、旋转、缩放）
+条件数（用于 Jacobian 稳定性与数值稳定分析）
+矩阵分解
+特征值分解（EVD）
+o对称矩阵的对角化
+o离散线性系统稳定性分析（谱半径 &lt; 1）
+奇异值分解（SVD）
+o降维、最小二乘稳定性
+o多体动力学矩阵、控制器数值稳定性
+QR / Cholesky 分解
+oQP 求解、正定矩阵分解
+o正交矩阵的数值优势
+正定矩阵 / 半正定矩阵
+SPD/PSD 的判别方法（特征值、Cholesky）
+Mass matrix 一定是 SPD（刚体动力学基础）
+QP cost matrix 必须 SPD 才能稳定、唯一解
+伪逆（Moore-Penrose）
+逆雅可比 IK 求解（欠驱/冗余系统）
+过约束系统力分配（least norm solution）
+Damped least squares（Tikhonov 正则）
+最小二乘（Least Squares）
+正规方程（Normal Equation）
+加权最小二乘（WLS）
+在线最小二乘（递推最小二乘）
+应用：力分配、IK、传感器标定、状态估计
+Jacobian（速度/力映射核心）
+关节速度 → 足端线速度、角速度
+足端力 → 关节力矩映射（τ = Jᵀ F）
+雅可比奇异性检测（det(JJᵀ) 接近 0）
+Jacobian 数值计算 vs 解析计算
+掌握标准
+能在纸上算简单矩阵运算、特征值、SVD 思路；
+会用 Numpy / Eigen 调用 EVD / SVD / QR / Cholesky； 
+能用伪逆 + Jacobian 实现简单机械臂/单腿 IK（Python 或 C++）；
+能识别 Jacobian/矩阵病态并解释对控制数值稳定性的影响。
+1.2 微积分与优化（梯度 / Hessian / 优化方法）
+微分基础
+一元函数导数、极值
+多元偏导数、方向导数
+全微分与链式法则（深度网络反向传播本质）
+梯度与 Hessian
+梯度的几何意义（最速上升方向）
+Hessian 矩阵（曲率、凸性判定）
+标量场的二阶近似（Taylor 二阶展开）
+在控制与优化中的角色：
+o二次近似（Newton 法、LQR）
+oQP 中 H 就是 Hessian 或其近似
+优化方法（无约束）
+梯度下降（GD）
+随机梯度下降（SGD）
+动量、Adam（深度 RL 标配）
+Newton 法 &amp; 拟牛顿（BFGS、L-BFGS）
+约束优化与 KKT
+等式约束、拉格朗日乘子
+不等式约束、KKT 条件
+应用：
+o有约束最优控制
+oQP / MPC / WBC 的理论基础
+凸优化
+凸集、凸函数定义
+强凸、Lipschitz 梯度
+一阶/二阶最优性条件
+在机器人学中的应用：QP-based 控制、MPC
+数值积分（动力学仿真必备）
+Euler 前向 / 后向
+中点法
+Runge-Kutta（RK2/RK4）
+稳定性 vs 计算开销（仿真步长的选择）
+掌握标准 
+能对常见多元函数求偏导，并用链式法则手算一次简单 BP；
+理解梯度和 Hessian 的几何意义（最陡下降 + 曲率）；<br />
+知道 GD / Adam / Newton 的更新公式、优缺点；<br />
+看得懂论文里写的优化问题：min 1/2 xᵀHx + fᵀx s.t. Ax ≤ b，知道 H 是 Hessian 或其近似； 
+能用 Euler / RK4 在 Python 中写一个简单双积分/倒立摆仿真。</p>
+<h3>1.3 概率与统计（状态估计 &amp; RL 噪声建模基础）</h3>
+<ul>
+<li><strong>概率分布</strong></li>
+<li>一维 / 多维高斯分布</li>
+<li>指数分布、Beta、Dirichlet（可选）</li>
+<li>多元高斯协方差矩阵的意义</li>
+<li><strong>条件概率与贝叶斯</strong></li>
+<li>条件概率、全概率公式</li>
+<li>贝叶斯定理</li>
+<li>先验、似然、后验</li>
+<li><strong>统计量</strong></li>
+<li>期望、方差、协方差、相关系数</li>
+<li>样本估计、置信区间（可选）</li>
+<li><strong>参数估计</strong></li>
+<li>最大似然估计（MLE）</li>
+<li>最大后验估计（MAP）</li>
+<li>在传感器标定、噪声估计中的应用</li>
+<li><strong>随机过程</strong></li>
+<li>马尔可夫链（Markov Chain）</li>
+<li>白噪声、彩色噪声</li>
+<li>在 RL 中的 MDP 假设与状态转移</li>
+<li><strong>掌握标准</strong></li>
+<li>能写出 1D / 多维高斯的公式；  </li>
+<li>会用 Python 生成高斯噪声、绘制分布；  </li>
+<li>能用贝叶斯公式做简单推断；  </li>
+<li>理解 EKF 中协方差 P 的意义（不必推完整公式）；  </li>
+<li>知道 RL 中 MDP 的“马尔可夫性”假设。</li>
+</ul>
+<hr />
+<h3>1.4 数值方法（数值稳定 &amp; 求解器）</h3>
+<ul>
+<li><strong>线性方程组求解</strong></li>
+<li>直接法：LU/QR/Cholesky</li>
+<li>迭代法：CG、GMRES（大规模问题）</li>
+<li>预处理技术：雅可比、iLU、多重网格</li>
+<li><strong>用途</strong>：</li>
+<li>解 MPC / QP / LQR 里的线性系统</li>
+<li>WBC 里求解大规模方程（可能用迭代）</li>
+<li><strong>建议</strong>：</li>
+<li>先把 LU/QR/Cholesky + CG 基本思路吃透；</li>
+<li>GMRES、多重网格可以先知道名词，之后用到再细看</li>
+<li><strong>特征值与 SVD 数值求解</strong></li>
+<li>数值稳定性</li>
+<li>大规模稀疏矩阵求解</li>
+<li>随机算法，随机SVD用于近似计算</li>
+<li><strong>用途：</strong></li>
+<li>模型降阶、特征模式分析</li>
+<li>做大规模仿真/日志降维时可能用随机 SVD</li>
+<li><strong>建议：</strong></li>
+<li>小规模 SVD 用在最小二乘 / 伪逆【必修】</li>
+<li>大规模/随机 SVD 那块先当“知道有这东西”，以后需要时再查。</li>
+<li><strong>误差传播与稳定性</strong></li>
+<li>条件数与病态问题</li>
+<li>浮点误差对控制和动力学仿真的影响</li>
+<li>前向误差 vs 后向误差分析</li>
+<li><strong>用途：</strong></li>
+<li>动力学仿真时间步太大 → 数值不稳定</li>
+<li>雅可比病态 → 足端力/位置很抖</li>
+<li>RL 里面 reward/obs 量纲差异大 → 梯度爆炸/消失</li>
+<li><strong>ODE 数值求解</strong></li>
+<li>刚性/非刚性系统求解</li>
+<li>步长控制、误差控制</li>
+<li>微分代数方程求解（用于带约束的动力学系统）</li>
+<li><strong>用途：</strong></li>
+<li>机器人动力学本质就是一堆 ODE/DAE</li>
+<li>Isaac Gym / Mujoco 内部就干这个</li>
+<li>在 Python 里自己写倒立摆/摆杆仿真也会用到</li>
+<li><strong>建议：</strong></li>
+<li>至少理解 显式 Euler / RK4 / 隐式方法 的区别</li>
+<li>“刚性”系统 + 小步长对数值稳定性的影响，多结合你实际仿真经验写几条。</li>
+<li><strong>非线性问题数值求解</strong></li>
+<li>非线性方程组：牛顿-拉夫森法</li>
+<li>非线性优化：拟牛顿法（BFGS）</li>
+<li>非线性最小二乘：高斯-牛顿法、LM算法</li>
+<li><strong>用途：</strong></li>
+<li>IK 数值解 → 牛顿法/LM</li>
+<li>标定问题 → 非线性最小二乘</li>
+<li>MPC / 参数估计 → 非线性优化</li>
+<li><strong>建议：</strong></li>
+<li>至少手推一遍 牛顿-拉夫森 的公式</li>
+<li>知道 LM 在“拟合 + 噪声”场景下更鲁棒（以后你搞传感器标定会用到）。</li>
+<li><strong>实现与性能考量</strong></li>
+<li>并行计算（CPU/GPU并行化）</li>
+<li>自动微分</li>
+<li>数值精度（FP32, FP64, FP16）的选择与混合</li>
+<li><strong>用途：</strong></li>
+<li>Isaac Gym / PPO 训练 → GPU 并行</li>
+<li>PyTorch → 自动微分</li>
+<li>以后做 ONNX / TensorRT 推理时要考虑 FP16/FP32</li>
+<li><strong>建议：</strong></li>
+<li>“换成 FP16 之后训练发散”</li>
+<li>“自动微分比数值求导稳定多了”</li>
+</ul>
+<hr />
+<h3>1.5 力学 / 物理（Embodied 的“物理身体”基础）</h3>
+<ul>
+<li><strong>刚体动力学</strong></li>
+<li>质心、转动惯量</li>
+<li>Euler 方程（刚体旋转）</li>
+<li>动量、角动量守恒</li>
+<li><strong>接触动力学</strong></li>
+<li>接触约束（位置/速度/加速度层面的约束）</li>
+<li>冲量、碰撞模型（弹性/非弹性碰撞）</li>
+<li>摩擦模型（库仑摩擦、粘滞摩擦）</li>
+<li><strong>多体系统动力学</strong></li>
+<li>链式刚体系统</li>
+<li>Featherstone 算法（ABA / RNEA）</li>
+<li>在仿真引擎（MuJoCo、Isaac Gym）中的实现思想</li>
+</ul>
+<hr />
+<h2>2. 编程与系统</h2>
+<h3>2.1 Python（ML/RL 主力语言）</h3>
+<ul>
+<li>Numpy / Scipy（数值运算、线性代数）</li>
+<li>Matplotlib / Seaborn（结果可视化）</li>
+<li>PyTorch（Tensor、Autograd、Optimizer、nn.Module）</li>
+<li>项目结构设计（package、module、config）</li>
+<li>多进程 / 多线程（数据采集 + 训练并行）</li>
+</ul>
+<hr />
+<h3>2.2 C++（机器人底层 / 实时控制）</h3>
+<ul>
+<li>现代 C++（C++17/20 特性）</li>
+<li>内存管理（RAII、智能指针）</li>
+<li>模板与泛型编程（Eigen、控制库常用）</li>
+<li>Eigen（矩阵运算、几何变换）</li>
+<li>CMake（构建系统）</li>
+<li>实时循环（固定控制周期、计时器、中断感）</li>
+</ul>
+<hr />
+<h3>2.3 CUDA（仿真加速 / 并行计算）</h3>
+<ul>
+<li>CUDA 编程模型（grid / block / warp）</li>
+<li>设备内存管理（global / shared / constant）</li>
+<li>Kernel 设计与优化（coalesced memory）</li>
+<li>基本并行模式（map / reduce / scan）</li>
+</ul>
+<hr />
+<h3>2.4 工程系统（DevOps）</h3>
+<ul>
+<li>Linux 系统管理（进程、权限、脚本）</li>
+<li>Git（分支、合并、冲突解决）</li>
+<li>Docker / 容器化（环境隔离、部署）</li>
+<li>CI / CD 基础意识（可选）</li>
+</ul>
+<hr />
+<h2>3. 机器人学</h2>
+<h3>3.1 运动学（Kinematics）</h3>
+<ul>
+<li>DH 参数与刚体位姿表示（齐次变换）</li>
+<li>前向运动学 FK（base → 足端）</li>
+<li>逆运动学 IK（解析法 / 数值法）</li>
+<li>Jacobian（速度映射、力映射）</li>
+<li>奇异性分析（行列式 / 秩 / 条件数）</li>
+<li>冗余自由度分解（null space 投影）</li>
+</ul>
+<hr />
+<h3>3.2 动力学（Dynamics）</h3>
+<ul>
+<li>Lagrangian 形式：L = T - V</li>
+<li>Newton-Euler 方程</li>
+<li>Mass matrix M(q) 推导与性质（SPD）</li>
+<li>Coriolis / Centrifugal C(q, qdot)</li>
+<li>Gravity g(q)</li>
+<li>逆动力学（给定 q, qdot, qddot → τ）</li>
+</ul>
+<hr />
+<h3>3.3 多体系统（Multi-body）</h3>
+<ul>
+<li>关节树结构（URDF 中的 Link/Joint）</li>
+<li>Featherstone RNEA（O(n) 逆动力学）</li>
+<li>Featherstone ABA（O(n) 正动力学）</li>
+<li>复合刚体惯量（CRBA）</li>
+</ul>
+<hr />
+<h3>3.4 接触动力学</h3>
+<ul>
+<li>接触约束的描述（位置/速度）</li>
+<li>摩擦锥（friction cone）与线性近似（pyramid）</li>
+<li>约束求解：</li>
+<li>LCP（Linear Complementarity Problem）</li>
+<li>QP（力优化）</li>
+<li>正压力、切向力的物理意义</li>
+<li>多足接触、切换顺序</li>
+</ul>
+<hr />
+<h3>3.5 机器人建模</h3>
+<ul>
+<li>URDF / Xacro（结构、惯量、关节类型）</li>
+<li>SDF（更复杂的仿真模型）</li>
+<li>碰撞模型 / 可视化模型分离</li>
+<li>质量、惯量标定与估计</li>
+</ul>
+<hr />
+<h3>3.6 运动控制（Control）</h3>
+<ul>
+<li>PID 控制（位置 / 速度 / 力矩）</li>
+<li>LQR / TVLQR（线性系统最优控制）</li>
+<li>MPC（Model Predictive Control）</li>
+<li>预测时域、代价函数设计</li>
+<li>约束（力、姿态、接触模式）</li>
+<li>Whole-Body Control（WBC）</li>
+<li>任务空间控制（Task-Space）</li>
+<li>QP-based 力/加速度分配</li>
+<li>Impedance Control（阻抗控制）</li>
+<li>足端顺应性</li>
+<li>位置 + 力的混合控制</li>
+</ul>
+<hr />
+<h2>4. 传感器与状态估计</h2>
+<ul>
+<li><strong>IMU（姿态 / 角速度 / 加速度）</strong></li>
+<li>陀螺/加速度计偏置</li>
+<li>姿态解算（Mahony/Madgwick/EKF）</li>
+<li><strong>Encoder（关节角 / 角速度）</strong></li>
+<li>绝对编码器 / 增量编码器</li>
+<li>速度估计与滤波</li>
+<li><strong>力传感器（Force/Torque）</strong></li>
+<li>足端力估计</li>
+<li>接触检测门限 / 滤波</li>
+<li><strong>状态估计滤波</strong></li>
+<li>EKF / UKF（非线性状态估计）</li>
+<li>ESKF（误差状态卡尔曼滤波）</li>
+<li>融合 IMU + 足端 + 编码器 → 机体速度</li>
+<li><strong>足端接触估计</strong></li>
+<li>基于力阈值</li>
+<li>基于速度/位置不连续</li>
+<li>基于概率模型</li>
+<li><strong>VIO / SLAM（可选）</strong></li>
+<li>VIO（视觉惯性里程计）</li>
+<li>LiDAR SLAM</li>
+<li>地图构建与姿态修正</li>
+</ul>
+<hr />
+<h2>5. 深度学习（DL）</h2>
+<ul>
+<li>CNN/ViT（图像特征提取）</li>
+<li>MLP（RL 中 policy &amp; value baseline）</li>
+<li>自监督学习（contrastive, masked modeling）</li>
+<li>对比学习（SimCLR, BYOL）</li>
+<li>表征学习（AE/VAE）</li>
+<li>模型压缩（剪枝、蒸馏、量化）</li>
+<li>多模态模型（CLIP、VLM、视觉-语言模型）</li>
+</ul>
+<hr />
+<h2>6. 强化学习（RL）</h2>
+<ul>
+<li><strong>理论基础</strong></li>
+<li>MDP（S, A, P, R, γ）</li>
+<li>Value function / Q-function</li>
+<li>Policy gradient / Actor-Critic</li>
+<li><strong>主流算法</strong></li>
+<li>DQN / Double DQN（离散动作）</li>
+<li>PPO / A2C / A3C</li>
+<li>SAC / TD3 / DDPG（连续控制）</li>
+<li><strong>Model-Based RL</strong></li>
+<li>Learned dynamics model</li>
+<li>Dreamer 系列</li>
+<li>MPC + RL 混合架构</li>
+<li><strong>Imitation Learning</strong></li>
+<li>Behavior Cloning（BC）</li>
+<li>DAGGER</li>
+<li>DAPG（RL + Demonstration）</li>
+<li><strong>工程强化技巧</strong></li>
+<li>Reward shaping（足端、姿态、能耗）</li>
+<li>Domain Randomization（质量、摩擦、感知噪声）</li>
+<li>Curriculum Learning（速度/地形难度渐进）</li>
+<li>Safety RL（约束条件、惩罚机制）</li>
+</ul>
+<hr />
+<h2>7. 规划（Planning）</h2>
+<ul>
+<li>栅格路径规划：Dijkstra / A<em> / D</em></li>
+<li>采样规划：RRT / RRT* / PRM</li>
+<li>轨迹规划：</li>
+<li>多项式轨迹（jerk 最小）</li>
+<li>spline/Bézier 曲线</li>
+<li>MPC-based trajectory（带约束）</li>
+<li>足端步态规划（Footstep Planning）</li>
+<li>ZMP / CoM 稳定性约束</li>
+<li>四足/双足步态模式切换</li>
+</ul>
+<hr />
+<h2>8. 具身智能核心（Embodied Cognition）</h2>
+<ul>
+<li>世界模型（World Model）</li>
+<li>状态预测模型：p(s_{t+1} | s_t, a_t)</li>
+<li>场景表示：occupancy、SDF、NeRF（可选）</li>
+<li>动作模型（Policy）</li>
+<li>从图像 / 语言 / 状态到动作</li>
+<li>多模态理解（Vision/Touch）</li>
+<li>视觉 + 力觉融合</li>
+<li>因果推理（Causal）</li>
+<li>因果图、干预、反事实（科研向）</li>
+<li>Vision-Language-Action（RT-2 / RT-X）</li>
+<li>由语言指令驱动机器人行为</li>
+<li>高层规划 + 低层控制解耦</li>
+</ul>
+<hr />
+<h2>9. 仿真系统</h2>
+<ul>
+<li>Isaac Gym（GPU 并行仿真）</li>
+<li>Actor / Env 管理</li>
+<li>状态缓冲区（root_state_tensor, dof_state）</li>
+<li>大规模并行 rollouts</li>
+<li>Mujoco（精确接触仿真）</li>
+<li>接触模型</li>
+<li>XML 模型定义</li>
+<li>PyBullet（教学 / 快速验证）</li>
+<li>Sim2Real gap 建模</li>
+<li>感知噪声（IMU/Joints）</li>
+<li>摩擦系数偏差</li>
+<li>力矩常数、关节死区、延迟</li>
+</ul>
+<hr />
+<h2>10. 实际部署（Sim2Real）</h2>
+<ul>
+<li>ROS1/ROS2</li>
+<li>节点、Topic、Service、Action</li>
+<li>TF（坐标系管理）</li>
+<li>控制周期（200~1000Hz）</li>
+<li>实时线程，调度优先级</li>
+<li>力矩 / 速度控制接口</li>
+<li>驱动器通信协议（CAN/EtherCAT）</li>
+<li>电机/驱动器建模</li>
+<li>转矩常数、反电动势</li>
+<li>饱和、温度限制</li>
+<li>延迟补偿</li>
+<li>预测控制 / 延迟估计</li>
+<li>滤波 / 参数估计</li>
+<li>LPF / HPF</li>
+<li>传感器偏置估计</li>
+<li>安全策略</li>
+<li>跌倒检测（roll/pitch）</li>
+<li>力矩限制、接触过载保护</li>
+<li>急停策略</li>
+</ul>
+<hr />
+<h2>11. 腿足式机器人（Legged）</h2>
+<ul>
+<li>Gait（步态类型）</li>
+<li>Trot / Pace / Bound / Walk</li>
+<li>Gait pattern 与稳定性</li>
+<li>Phase / Duty Factor</li>
+<li>相位定义（0–1 周期）</li>
+<li>duty factor（支撑百分比）</li>
+<li>不同速度下的 duty factor 调整</li>
+<li>Swing / Stance 时序</li>
+<li>Swing 时间、抬脚高度、轨迹形状</li>
+<li>Stance 相的力分配与稳定控制</li>
+<li>过渡边界（lift-off、touch-down）</li>
+<li>Raibert Foot Placement</li>
+<li>基于速度和误差的落脚点公式</li>
+<li>CoM 稳定性近似</li>
+<li>结合 RL 的 foot placement reward</li>
+<li>Foot clearance 曲线</li>
+<li>抬脚高度参数化（多项式/Bézier）</li>
+<li>防撞 / 防拖脚</li>
+<li>随速度 / 地形自适应高度</li>
+<li>Turning compensation（转向补偿）</li>
+<li>外展偏移（膝外展、髋外展）</li>
+<li>角速度补偿（yaw rate）</li>
+<li>内外侧腿步幅/相位差调节</li>
+<li>多接触管理</li>
+<li>接触序列设计（哪些腿在支撑）</li>
+<li>接触稳定区域（support polygon）</li>
+<li>突然失去接触时的恢复策略</li>
+<li>Payload-aware locomotion（质量补偿）</li>
+<li>机身质量估计</li>
+<li>载荷质量对速度/步态的限制</li>
+<li>基于查表（lookup table）的速度上限</li>
+<li>质量变化时的控制增益调整</li>
+</ul></div>

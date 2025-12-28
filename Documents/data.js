@@ -1,4 +1,24 @@
-const LOCAL_DATA = { version: 'posix.times_result(user=0.03, system=0.02, children_user=0.03, children_system=0.14, elapsed=4294855.13)', list: [
+const LOCAL_DATA = { version: '1766895976', list: [
+  {
+    "title": "0.1_四足机器人RL路线",
+    "path": "content/0_学习路线&总览/0.1_四足机器人RL路线.html",
+    "folder": "0_学习路线&总览"
+  },
+  {
+    "title": "0.1_四足机器人强化学习",
+    "path": "content/0_学习路线&总览/0.1_四足机器人强化学习.html",
+    "folder": "0_学习路线&总览"
+  },
+  {
+    "title": "0.2_具身智能全栈知识地图 copy",
+    "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图 copy.html",
+    "folder": "0_学习路线&总览"
+  },
+  {
+    "title": "⚠️ 0.2_具身智能全栈知识地图 (损坏)",
+    "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图.html",
+    "folder": "0_学习路线&总览"
+  },
   {
     "title": "Cpp基础",
     "path": "content/10_sim2real/Cpp基础.html",
@@ -18,6 +38,36 @@ const LOCAL_DATA = { version: 'posix.times_result(user=0.03, system=0.02, childr
     "title": "Python基础",
     "path": "content/11_legged/Python基础.html",
     "folder": "11_legged"
+  },
+  {
+    "title": "⚠️ 1.1_线性代数 (损坏)",
+    "path": "content/1_math_physics/1.1_线性代数.html",
+    "folder": "1_math_physics"
+  },
+  {
+    "title": "⚠️ 1.2_微积分与优化 (损坏)",
+    "path": "content/1_math_physics/1.2_微积分与优化.html",
+    "folder": "1_math_physics"
+  },
+  {
+    "title": "⚠️ 1.3_概率与统计 (损坏)",
+    "path": "content/1_math_physics/1.3_概率与统计.html",
+    "folder": "1_math_physics"
+  },
+  {
+    "title": "⚠️ 1.4_数值方法 (损坏)",
+    "path": "content/1_math_physics/1.4_数值方法.html",
+    "folder": "1_math_physics"
+  },
+  {
+    "title": "⚠️ 1.5_力学与动力学 (损坏)",
+    "path": "content/1_math_physics/1.5_力学与动力学.html",
+    "folder": "1_math_physics"
+  },
+  {
+    "title": "⚠️ 1.6_RL推导合集 (损坏)",
+    "path": "content/1_math_physics/1.6_RL推导合集.html",
+    "folder": "1_math_physics"
   },
   {
     "title": "Cpp基础",
