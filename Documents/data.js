@@ -1,4 +1,4 @@
-const LOCAL_DATA = { version: '1766912486', list: [
+const LOCAL_DATA = { version: '1766913157', list: [
   {
     "title": "0.1_四足机器人RL路线",
     "path": "content/0_学习路线&总览/0.1_四足机器人RL路线.html",
