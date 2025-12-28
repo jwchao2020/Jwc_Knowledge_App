@@ -1,44 +1,80 @@
-name: 📱 Build Android APK
+name: 🚀 自动转换文档 & 构建 APK
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # 监听 main 分支的改动
+  workflow_dispatch: # 允许手动触发
+
+# 🔑 设置权限，允许脚本修改仓库（用于发布 HTML）
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ 1. 拉取代码
-        uses: actions/checkout@v4       # 升级为 v4
+      # 1. 拉取代码
+      - name: ⬇️ 拉取代码
+        uses: actions/checkout@v4
 
-      - name: 🟢 2. 设置 Node.js 环境
-        uses: actions/setup-node@v4     # 升级为 v4
+      # 2. 🐍 设置 Python 环境
+      - name: 🐍 设置 Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 3. 🐼 安装 Pandoc (转换核心工具)
+      - name: 🐼 安装 Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
+      # 4. 🔄 运行转换脚本 (Word -> HTML)
+      - name: 🔄 执行文档转换
+        run: |
+          python3 build_html.py
+          # 验证一下是否生成了文件
+          ls -R Documents/content || echo "没有生成 content 目录"
+
+      # 5. 🚀 发布 HTML 到 gh-pages 分支 (实现在线热更新)
+      - name: 🚀 发布在线资源
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./  # 发布整个目录，这样 Documents 结构保持完整
+          publish_branch: gh-pages  # 发布到 gh-pages 分支
+          keep_files: false # 覆盖旧文件
+
+      # --- 到这里，在线更新功能已经完成了 ---
+      # --- 下面是打包 APK 的步骤 (给新用户用) ---
+
+      - name: 🟢 设置 Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: ☕ 3. 设置 Java 环境 (JDK 17)
-        uses: actions/setup-java@v4     # 升级为 v4
+      - name: ☕ 设置 Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 📦 4. 安装依赖
+      - name: 📦 安装项目依赖
         run: npm install
 
-      - name: 🔧 5. 初始化安卓环境
+      - name: 🔧 初始化 Capacitor
         run: |
-          npx cap add android
+          npx cap add android || true
           npx cap sync android
 
-      - name: 🔨 6. 打包 APK
+      - name: 🔨 构建 APK
         working-directory: ./android
         run: ./gradlew assembleDebug
 
-      - name: 📤 7. 上传 APK 到 GitHub
-        uses: actions/upload-artifact@v4  # 关键修复：升级为 v4
+      - name: 📤 上传 APK
+        uses: actions/upload-artifact@v4
         with:
-          name: Jwc-Knowledge-App
+          name: Jwc-Knowledge-App-Latest
           path: android/app/build/outputs/apk/debug/app-debug.apk
