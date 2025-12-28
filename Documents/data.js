@@ -1,4 +1,4 @@
-const LOCAL_DATA = { version: '1766910001', list: [
+const LOCAL_DATA = { version: '1766910203', list: [
   {
     "title": "0.1_四足机器人RL路线",
     "path": "content/0_学习路线&总览/0.1_四足机器人RL路线.html",
@@ -40,32 +40,32 @@ const LOCAL_DATA = { version: '1766910001', list: [
     "folder": "11_legged"
   },
   {
-    "title": "⚠️ 1.1_线性代数 (损坏)",
+    "title": "1.1_线性代数",
     "path": "content/1_math_physics/1.1_线性代数.html",
     "folder": "1_math_physics"
   },
   {
-    "title": "⚠️ 1.2_微积分与优化 (损坏)",
+    "title": "1.2_微积分与优化",
     "path": "content/1_math_physics/1.2_微积分与优化.html",
     "folder": "1_math_physics"
   },
   {
-    "title": "⚠️ 1.3_概率与统计 (损坏)",
+    "title": "1.3_概率与统计",
     "path": "content/1_math_physics/1.3_概率与统计.html",
     "folder": "1_math_physics"
   },
   {
-    "title": "⚠️ 1.4_数值方法 (损坏)",
+    "title": "1.4_数值方法",
     "path": "content/1_math_physics/1.4_数值方法.html",
     "folder": "1_math_physics"
   },
   {
-    "title": "⚠️ 1.5_力学与动力学 (损坏)",
+    "title": "1.5_力学与动力学",
     "path": "content/1_math_physics/1.5_力学与动力学.html",
     "folder": "1_math_physics"
   },
   {
-    "title": "⚠️ 1.6_RL推导合集 (损坏)",
+    "title": "1.6_RL推导合集",
     "path": "content/1_math_physics/1.6_RL推导合集.html",
     "folder": "1_math_physics"
   },
