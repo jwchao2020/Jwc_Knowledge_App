@@ -18,6 +18,8 @@ jobs:
       # 1. 拉取代码
       - name: ⬇️ 拉取代码
         uses: actions/checkout@v4
+        with:
+          lfs: true  # <--- 关键！这行代码强制下载真实的 Word 文件
 
       # 2. 🐍 设置 Python (保持不变)
       - name: 🐍 设置 Python
