@@ -1,5 +1,5 @@
 const LOCAL_DATA = {
-  "version": 1766923622,
+  "version": 1766924121,
   "tree": [
     {
       "title": "0_学习路线&总览",
@@ -17,6 +17,11 @@ const LOCAL_DATA = {
         {
           "title": "0.2_具身智能全栈知识地图",
           "path": "content/0_学习路线&总览/0.2_具身智能全栈知识地图.html",
+          "type": "file"
+        },
+        {
+          "title": "0.2_具身智能学习路线",
+          "path": "content/0_学习路线&总览/0.2_具身智能学习路线.html",
           "type": "file"
         }
       ]
