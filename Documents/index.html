@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Jwc 知识库</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script src="lib/pdfjs/pdf.min.js"></script>
 
     <style>
         :root { --primary: #007bff; --bg: #f8f9fa; --text: #333; --card: #fff; }
         [data-theme="dark"] { --primary: #4dabf7; --bg: #121212; --text: #e0e0e0; --card: #1e1e1e; }
         
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; /* 禁止整体滚动，由子视图接管 */ }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow: hidden; }
 
         /* === 首页 === */
         #home-view { 
@@ -35,11 +35,18 @@
         .children { display: none; padding-left: 20px; background: rgba(0,0,0,0.02); }
         .children.show { display: block; }
 
-        /* === 📖 阅读页面 === */
+        /* === iframe 阅读器 (用于显示 HTML) === */
+        #iframe-view {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 200; flex-direction: column;
+        }
+        .iframe-container { flex: 1; width: 100%; height: 100%; border: none; }
+
+        /* === PDF 阅读页面 === */
         #pdf-view {
             display: none; 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #e0e0e0; z-index: 200;
+            background: #525659; z-index: 200;
             flex-direction: column;
         }
 
@@ -57,22 +64,13 @@
         
         /* PDF 滚动容器 */
         #pdf-scroll-container {
-            flex: 1; overflow: auto; /* 允许双向滚动 */
-            -webkit-overflow-scrolling: touch;
-            padding: 20px;
-            position: relative;
-            background-color: #525659;
-            touch-action: pan-x pan-y; /* 允许手指拖动 */
+            flex: 1; overflow: auto; padding: 20px; position: relative;
+            touch-action: pan-x pan-y;
         }
-
-        /* 每一页 */
         .pdf-page {
-            margin: 0 auto 15px auto;
-            background: white; 
+            margin: 0 auto 15px auto; background: white; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            /* 🟢 关键：宽度由 JS 动态控制 */
-            width: 100%; 
-            transform-origin: top left;
+            width: 100%; transform-origin: top left;
         }
         .pdf-page svg { width: 100%; height: auto; display: block; }
 
@@ -87,27 +85,31 @@
 <div id="home-view">
     <header>
         <div class="app-title">📚 知识库</div>
-        <div id="status-text" style="font-size:12px; opacity:0.8">连接中...</div>
+        <div id="status-text" style="font-size:12px; opacity:0.8">准备就绪</div>
     </header>
     <div id="file-list"></div>
 </div>
 
+<div id="iframe-view">
+    <div class="reader-bar">
+        <button class="close-btn" onclick="closeReader()">❮ 返回</button>
+        <span class="reader-title" id="iframe-title">文档</span>
+        <div style="width: 30px;"></div> </div>
+    <iframe id="content-iframe" class="iframe-container" src=""></iframe>
+</div>
+
 <div id="pdf-view">
     <div class="reader-bar">
-        <button class="close-btn" onclick="closePdf()">❮ 返回</button>
+        <button class="close-btn" onclick="closeReader()">❮ 返回</button>
         <span class="reader-title" id="doc-title">标题</span>
-        
         <div class="zoom-controls">
             <button class="zoom-btn" onclick="changeZoom(-0.2)">－</button>
             <button class="zoom-btn" onclick="changeZoom(0.2)">＋</button>
         </div>
     </div>
-    
     <div id="pdf-scroll-container">
-        <div id="pdf-content-wrapper">
-            </div>
+        <div id="pdf-content-wrapper"></div>
     </div>
-
     <div id="loading-box" class="loading-box" style="display:none">
         <div style="font-size:20px; margin-bottom:10px;">⏳</div>
         <div id="loading-text">加载中...</div>
@@ -116,99 +118,82 @@
 
 <script src="data.js"></script>
 <script>
+    // === 🟢 修改 2: 配置本地 Worker ===
+    // 确保 pdf.worker.min.js 和 index.html 在同一目录下
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
+    }
+
     // === 配置 ===
     const USER = 'jwchao2020';
     const REPO = 'Jwc_Knowledge_App';
     const BRANCH = 'gh-pages';
+    // 默认使用本地路径，只有在明确需要在线 PDF 时才用 CDN
     const CDN_ROOT = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}/Documents/`;
     const DATA_URL = CDN_ROOT + 'data.js';
-
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
     // DOM
     const homeView = document.getElementById('home-view');
     const pdfView = document.getElementById('pdf-view');
+    const iframeView = document.getElementById('iframe-view');
     const fileListEl = document.getElementById('file-list');
     const pdfWrapper = document.getElementById('pdf-content-wrapper');
     const scrollContainer = document.getElementById('pdf-scroll-container');
-    const titleEl = document.getElementById('doc-title');
-    const loadingBox = document.getElementById('loading-box');
-    const loadingText = document.getElementById('loading-text');
     const statusText = document.getElementById('status-text');
 
     let useOnline = false;
     let lastScrollPosition = 0;
-    
-    // === 🔍 缩放逻辑 (核心) ===
-    let currentScale = 1.0; // 1.0 = 100% 宽度
-    
+    let currentScale = 1.0;
+
+    // === 缩放逻辑 ===
     function changeZoom(delta) {
         let newScale = currentScale + delta;
-        if (newScale < 1.0) newScale = 1.0; // 最小 100%
-        if (newScale > 3.0) newScale = 3.0; // 最大 300%
+        if (newScale < 1.0) newScale = 1.0;
+        if (newScale > 3.0) newScale = 3.0;
         applyZoom(newScale);
     }
-
     function applyZoom(scale) {
         currentScale = scale;
-        // 直接修改 Wrapper 的宽度百分比
-        // 1.0 -> 100%, 1.5 -> 150%
         pdfWrapper.style.width = `${currentScale * 100}%`;
-        
-        // 缩放时保持居中 (如果是缩小)
-        if (currentScale === 1.0) {
-            pdfWrapper.style.margin = "0 auto";
-        } else {
-            pdfWrapper.style.margin = "0"; // 放大后靠左对齐，允许滚动
-        }
+        pdfWrapper.style.margin = (currentScale === 1.0) ? "0 auto" : "0";
     }
 
-    // === 👆 手势缩放监听 (Pinch) ===
-    let initialDistance = 0;
-    let initialScale = 1.0;
-
-    scrollContainer.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-            e.preventDefault(); // 防止浏览器默认行为
-            initialDistance = getDistance(e.touches);
-            initialScale = currentScale;
-        }
-    }, { passive: false });
-
-    scrollContainer.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            const currentDistance = getDistance(e.touches);
-            if (initialDistance > 0) {
-                const ratio = currentDistance / initialDistance;
-                // 计算新比例
-                let newScale = initialScale * ratio;
-                // 限制范围
-                if (newScale < 1.0) newScale = 1.0; 
-                if (newScale > 3.0) newScale = 3.0;
-                applyZoom(newScale);
-            }
-        }
-    }, { passive: false });
-
-    function getDistance(touches) {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    // === 拦截物理返回键 ===
+    // === 拦截返回键 ===
     window.addEventListener('popstate', function(event) {
-        if (pdfView.style.display === 'flex') {
-            closePdf(true); 
+        if (pdfView.style.display === 'flex' || iframeView.style.display === 'flex') {
+            closeReader(true); 
         }
     });
+
+    // === 打开文档入口 (支持 PDF 和 HTML) ===
+    function openDoc(node) {
+        // 解码 node (从 onclick 传递过来的是 base64 或者是对象)
+        // 这里简化逻辑，我们假设 node 是传过来的数据对象
+    }
+
+    // === 打开 HTML (新增功能) ===
+    function openHtml(relativePath, title) {
+        lastScrollPosition = homeView.scrollTop;
+        window.history.pushState({view: 'reader'}, null, '#reader');
+        
+        homeView.style.display = 'none';
+        iframeView.style.display = 'flex';
+        document.getElementById('iframe-title').innerText = title;
+        
+        // 🟢 关键：直接加载本地文件
+        document.getElementById('content-iframe').src = relativePath;
+    }
 
     // === 打开 PDF ===
     async function openPdf(relativePath, title) {
         if (!useOnline) {
-            alert("⚠️ 需要联网加载高清文档");
-            return;
+            // 尝试本地加载 (虽然 PDF 比较大，但如果有本地路径也可以尝试)
+            // 这里为了演示，我们还是提示联网
+            if(confirm("PDF 文件较大，是否尝试在线加载？")) {
+                // 继续
+            } else {
+                return;
+            }
         }
 
         lastScrollPosition = homeView.scrollTop;
@@ -217,71 +202,77 @@
         homeView.style.display = 'none';
         pdfView.style.display = 'flex';
         
-        // 重置状态
-        titleEl.innerText = title;
+        document.getElementById('doc-title').innerText = title;
         pdfWrapper.innerHTML = ''; 
-        loadingBox.style.display = 'block';
-        loadingText.innerText = "准备加载...";
-        applyZoom(1.0); // 重置缩放
+        document.getElementById('loading-box').style.display = 'block';
+        applyZoom(1.0);
 
         try {
-            const url = CDN_ROOT + relativePath;
+            const url = CDN_ROOT + relativePath; // PDF 仍然尝试从在线加载
             const loadingTask = pdfjsLib.getDocument(url);
-            
             loadingTask.onProgress = (p) => {
                 const percent = Math.round((p.loaded / p.total) * 100);
-                if(!isNaN(percent)) loadingText.innerText = `下载 ${percent}%`;
+                if(!isNaN(percent)) document.getElementById('loading-text').innerText = `下载 ${percent}%`;
             };
 
             const pdf = await loadingTask.promise;
-            loadingText.innerText = "渲染中...";
-
             for (let i = 1; i <= pdf.numPages; i++) {
                 await renderPageAsSVG(pdf, i);
                 if (i % 5 === 0) await new Promise(r => setTimeout(r, 100));
             }
-            loadingBox.style.display = 'none';
-
+            document.getElementById('loading-box').style.display = 'none';
         } catch (error) {
             console.error(error);
-            loadingText.innerHTML = "❌ 加载失败";
+            alert("加载 PDF 失败，请检查网络");
+            closeReader(true);
         }
     }
 
     async function renderPageAsSVG(pdf, num) {
         const page = await pdf.getPage(num);
         const viewport = page.getViewport({ scale: 1.0 });
-
         const pageDiv = document.createElement('div');
         pageDiv.className = 'pdf-page';
-        // 保持宽高比
         pageDiv.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
         pdfWrapper.appendChild(pageDiv);
-
         const opList = await page.getOperatorList();
         const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
         const svg = await svgGfx.getSVG(opList, viewport);
-        
         pageDiv.appendChild(svg);
     }
 
-    function closePdf(isHardwareBack = false) {
+    function closeReader(isHardwareBack = false) {
         if (!isHardwareBack) window.history.back();
-
         pdfView.style.display = 'none';
+        iframeView.style.display = 'none';
         homeView.style.display = 'block';
+        document.getElementById('content-iframe').src = ''; // 清理 iframe
         pdfWrapper.innerHTML = ''; 
         homeView.scrollTop = lastScrollPosition;
     }
 
-    // === 初始化 & 目录 ===
+    // === 目录渲染 ===
     function renderTree(nodes, container) {
         nodes.forEach(node => {
             const div = document.createElement('div');
             div.className = 'node';
-            if (node.pdf) {
-                div.innerHTML = `<div class="node-title" onclick="openPdf('${node.pdf}', '${node.title}')"><span class="icon">📄</span><span class="text">${node.title}</span></div>`;
+            
+            // 🟢 修改 3: 适配 HTML 和 PDF 两种格式
+            // 我们之前的脚本生成的是 .html 文件，所以在 json 里通常是 node.url 或 node.path
+            // 这里做一个简单的判断
+            const targetPath = node.url || node.pdf || node.path;
+            
+            if (targetPath) {
+                // 是文件
+                const isPdf = targetPath.toLowerCase().endsWith('.pdf');
+                const icon = isPdf ? '📄' : '🌐';
+                const clickAction = isPdf ? 
+                    `openPdf('${targetPath}', '${node.title}')` : 
+                    `openHtml('${targetPath}', '${node.title}')`;
+
+                div.innerHTML = `<div class="node-title" onclick="${clickAction}"><span class="icon">${icon}</span><span class="text">${node.title}</span></div>`;
             } else {
+                // 是文件夹
                 const id = 'g-' + Math.random().toString(36).substr(2,9);
                 div.innerHTML = `<div class="node-title" onclick="toggle('${id}', this)"><span class="icon">📂</span><span class="text">${node.title}</span></div><div class="children" id="${id}"></div>`;
                 container.appendChild(div);
@@ -291,29 +282,51 @@
             container.appendChild(div);
         });
     }
+
     window.toggle = (id, el) => {
         const child = document.getElementById(id);
         child.classList.toggle('show');
         el.style.backgroundColor = child.classList.contains('show') ? 'rgba(0,0,0,0.05)' : '';
     };
 
+    // === 初始化 ===
     async function init() {
-        if (typeof LOCAL_DATA !== 'undefined') renderTree(LOCAL_DATA.tree, fileListEl);
+        // 1. 优先加载本地数据 (data.js)
+        if (typeof LOCAL_DATA !== 'undefined') {
+            console.log("加载本地数据...");
+            renderTree(LOCAL_DATA.tree, fileListEl);
+        } else {
+            statusText.innerText = "无本地数据";
+        }
+
+        // 2. 尝试联网更新 (静默更新，不阻塞界面)
         try {
-            const res = await fetch(DATA_URL);
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 3000); // 3秒超时
+            
+            const res = await fetch(DATA_URL, { signal: controller.signal });
+            clearTimeout(id);
+            
             if(res.ok) {
                 const txt = await res.text();
-                const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+                // 提取 JSON
+                const jsonStr = txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1);
+                const json = JSON.parse(jsonStr);
+                
+                // 只有版本更新才刷新界面
                 const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version) : 0;
-                if (Number(json.version) >= localVer) {
+                if (Number(json.version) > localVer) {
                     useOnline = true;
-                    statusText.innerText = "🟢 在线 v" + json.version.toString().slice(-4);
-                    statusText.style.color = "#81ff98";
+                    statusText.innerText = "🟢 在线 v" + json.version;
+                    statusText.style.color = "#28a745";
                     fileListEl.innerHTML = ''; 
                     renderTree(json.tree, fileListEl);
                 }
             }
-        } catch(e) { statusText.innerText = "⚪ 离线模式"; }
+        } catch(e) { 
+            console.log("离线模式或网络不佳");
+            // 保持本地数据不动，界面不会卡住
+        }
     }
 
     init();
