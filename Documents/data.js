@@ -1,5 +1,5 @@
 const LOCAL_DATA = {
-  "version": 1766925459,
+  "version": 1766926526,
   "tree": [
     {
       "title": "0_学习路线&总览",

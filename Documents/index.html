@@ -106,11 +106,19 @@
     <script src="data.js"></script>
 
 <script>
-    // === 1. 初始化 PDF Worker (关键路径修正) ===
+    // === 0. ☁️ 在线更新配置 (请修改为你的仓库信息) ===
+    const USER = 'jwchao2020';
+    const REPO = 'Jwc_Knowledge_App';
+    const BRANCH = 'gh-pages'; // 必须是 gh-pages 分支
+    const CDN_ROOT = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}/Documents/`;
+
+    let useOnline = false; // 标记当前是否使用在线数据
+
+    // === 1. 初始化 PDF Worker ===
     if (typeof pdfjsLib !== 'undefined') {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     } else {
-        showError("严重错误: pdfjsLib 未加载。\n请检查 lib/pdfjs/pdf.min.js 是否存在且大小正常。");
+        showError("严重错误: pdfjsLib 未加载。\n请检查 lib/pdfjs/pdf.min.js 是否存在。");
     }
 
     // === 2. 核心逻辑 ===
@@ -121,50 +129,34 @@
     let lastScrollY = 0;
     let currentScale = 1.0;
 
-    // 智能获取数据节点 (解决 undefined length 问题)
-    function getRootNodes() {
-        if (typeof LOCAL_DATA === 'undefined') {
-            showError("LOCAL_DATA 未定义。\n请检查 data.js 是否生成成功。");
-            return null;
+    // 智能获取数据节点
+    function getRootNodes(dataObj) {
+        if (!dataObj) return null;
+        if (dataObj.version) {
+            const verText = useOnline ? `🟢 在线 v${dataObj.version}` : `⚪ 离线 v${dataObj.version}`;
+            document.getElementById('version-display').innerText = verText;
         }
 
-        // 尝试显示版本号
-        if (LOCAL_DATA.version) {
-            document.getElementById('version-display').innerText = "v" + LOCAL_DATA.version;
-        }
-
-        // 🔍 自动寻找数组：不管是 tree, children, items 还是 root 本身
-        if (Array.isArray(LOCAL_DATA.tree)) return LOCAL_DATA.tree;
-        if (Array.isArray(LOCAL_DATA.children)) return LOCAL_DATA.children;
-        if (Array.isArray(LOCAL_DATA.items)) return LOCAL_DATA.items;
-        if (Array.isArray(LOCAL_DATA)) return LOCAL_DATA; // 根节点就是数组
-
-        // 如果还没找到，遍历属性找第一个数组
-        for (let key in LOCAL_DATA) {
-            if (Array.isArray(LOCAL_DATA[key])) {
-                console.log(`自动发现数据节点: ${key}`);
-                return LOCAL_DATA[key];
-            }
-        }
-
-        showError("无法识别数据结构。\nLOCAL_DATA 中找不到数组。\n可用属性: " + Object.keys(LOCAL_DATA).join(', '));
+        if (Array.isArray(dataObj.tree)) return dataObj.tree;
+        if (Array.isArray(dataObj.list)) return dataObj.list; // 兼容不同脚本生成的字段
+        if (Array.isArray(dataObj)) return dataObj;
         return null;
     }
 
     // 渲染目录树
     function renderTree(nodes, container) {
+        container.innerHTML = ''; // 清空旧数据
         if (!nodes) return;
+        
         nodes.forEach(node => {
             const title = node.title || node.name || "未命名";
-            // 兼容多种路径字段
-            const path = node.url || node.path || node.pdf || node.link; 
+            const path = node.path || node.url || node.link; 
             const isFolder = !path && (node.children || node.items);
 
             const div = document.createElement('div');
             div.className = 'node';
 
             if (isFolder) {
-                // 文件夹
                 const uid = 'folder-' + Math.random().toString(36).substr(2, 9);
                 div.innerHTML = `
                     <div class="node-title" onclick="toggleFolder('${uid}', this)">
@@ -175,13 +167,11 @@
                     <div class="children" id="${uid}"></div>
                 `;
                 container.appendChild(div);
-                // 递归渲染子节点 (注意字段名兼容)
                 renderTree(node.children || node.items, div.querySelector('.children'));
             } else {
-                // 文件
                 const isPdf = path && path.toLowerCase().endsWith('.pdf');
                 const icon = isPdf ? '📄' : '🌐';
-                // 这里的 path 需要处理一下，如果是相对路径
+                // 🟢 关键修改：传入相对路径，openFile 会负责拼接 CDN 前缀
                 div.innerHTML = `
                     <div class="node-title" onclick="openFile('${path}', '${title}', ${isPdf})">
                         <span class="icon">${icon}</span>
@@ -193,12 +183,9 @@
         });
     }
 
-    // 切换文件夹
     window.toggleFolder = function(id, headerEl) {
         const content = document.getElementById(id);
         const arrow = headerEl.querySelector('.arrow');
-        const isClosed = content.style.display !== 'block'; // 简单的判断
-        
         if (content.classList.contains('show')) {
             content.classList.remove('show');
             arrow.classList.remove('rotate');
@@ -208,35 +195,35 @@
         }
     };
 
-    // 打开文件分发
-    window.openFile = function(path, title, isPdf) {
-        if (!path) return alert("路径为空");
+    // 🟢 关键修改：打开文件时自动拼接在线 URL
+    window.openFile = function(relativePath, title, isPdf) {
+        if (!relativePath) return alert("路径为空");
+        
+        // 如果是在线模式，这就拼接成 https://cdn.../content/xxx.html
+        // 如果是离线模式，这就是 content/xxx.html (本地相对路径)
+        const fullPath = useOnline ? (CDN_ROOT + relativePath) : relativePath;
         
         lastScrollY = homeView.scrollTop;
         homeView.style.display = 'none';
-        
-        // 推送历史记录，处理安卓返回键
         history.pushState({view: 'reader'}, null, '#reader');
 
         if (isPdf) {
-            openPdfViewer(path, title);
+            openPdfViewer(fullPath, title);
         } else {
-            openHtmlViewer(path, title);
+            openHtmlViewer(fullPath, title);
         }
     };
 
-    // === HTML 阅读器逻辑 ===
     function openHtmlViewer(path, title) {
         iframeView.style.display = 'flex';
         document.getElementById('iframe-title').innerText = title;
         document.getElementById('content-iframe').src = path;
     }
 
-    // === PDF 阅读器逻辑 ===
     async function openPdfViewer(path, title) {
         pdfView.style.display = 'flex';
         document.getElementById('pdf-title').innerText = title;
-        document.getElementById('pdf-content-wrapper').innerHTML = ''; // 清空
+        document.getElementById('pdf-content-wrapper').innerHTML = '';
         document.getElementById('loading-box').style.display = 'block';
         currentScale = 1.0;
         updatePdfZoom();
@@ -247,13 +234,9 @@
                 const percent = Math.round((p.loaded / p.total) * 100);
                 if (!isNaN(percent)) document.getElementById('loading-text').innerText = `加载 ${percent}%`;
             };
-
             const pdf = await loadingTask.promise;
-            
-            // 逐页渲染
             for (let i = 1; i <= pdf.numPages; i++) {
                 await renderPdfPage(pdf, i);
-                // 每渲染5页歇一下，防止手机卡死
                 if (i % 3 === 0) await new Promise(r => setTimeout(r, 50));
             }
             document.getElementById('loading-box').style.display = 'none';
@@ -266,24 +249,18 @@
 
     async function renderPdfPage(pdf, num) {
         const page = await pdf.getPage(num);
-        const viewport = page.getViewport({ scale: 1.0 }); // 基础倍率
-        
+        const viewport = page.getViewport({ scale: 1.0 });
         const div = document.createElement('div');
         div.className = 'pdf-page';
-        // 计算宽高比，防止布局抖动
         div.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
         document.getElementById('pdf-content-wrapper').appendChild(div);
-
-        // 使用 SVG 渲染 (更清晰)
         const opList = await page.getOperatorList();
         const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
         const svg = await svgGfx.getSVG(opList, viewport);
-        svg.style.width = "100%";
-        svg.style.height = "100%";
+        svg.style.width = "100%"; svg.style.height = "100%";
         div.appendChild(svg);
     }
 
-    // === 缩放控制 ===
     window.changeZoom = function(delta) {
         currentScale += delta;
         if (currentScale < 0.5) currentScale = 0.5;
@@ -297,39 +274,21 @@
         wrapper.style.margin = currentScale <= 1.0 ? "0 auto" : "0";
     }
 
-    // === 关闭 / 返回 ===
     window.closeReader = function(isHardwareBack = false) {
         if (!isHardwareBack) history.back();
-        
         iframeView.style.display = 'none';
         pdfView.style.display = 'none';
         homeView.style.display = 'block';
-        
-        // 清理资源
         document.getElementById('content-iframe').src = '';
         document.getElementById('pdf-content-wrapper').innerHTML = '';
-        
         homeView.scrollTop = lastScrollY;
     };
 
-    // 监听安卓物理返回键
     window.addEventListener('popstate', () => {
         if (iframeView.style.display === 'flex' || pdfView.style.display === 'flex') {
-            closeReader(true); // 传入 true 表示不需要再 history.back()
+            closeReader(true);
         }
     });
-
-    // === 启动 ===
-    function init() {
-        try {
-            const data = getRootNodes();
-            if (data) {
-                renderTree(data, fileListEl);
-            }
-        } catch (e) {
-            showError("初始化失败: " + e.message);
-        }
-    }
 
     function showError(msg) {
         const el = document.getElementById('error-modal');
@@ -337,9 +296,50 @@
         el.innerText += "\n================\n" + msg;
     }
 
-    // 开始运行
-    init();
+    // === 3. 🟢 启动逻辑 (包含在线检查) ===
+    async function init() {
+        // 1. 先加载本地数据
+        if (typeof LOCAL_DATA !== 'undefined') {
+            const data = getRootNodes(LOCAL_DATA);
+            if (data) renderTree(data, fileListEl);
+        } else {
+            showError("离线数据 data.js 加载失败");
+        }
 
+        // 2. 尝试联网检查更新
+        try {
+            console.log("Checking update from:", CDN_ROOT + 'data.js');
+            const res = await fetch(CDN_ROOT + 'data.js');
+            if (res.ok) {
+                const txt = await res.text();
+                // 提取 JSON
+                const jsonStr = txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1);
+                const remoteData = JSON.parse(jsonStr);
+                
+                const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version) : 0;
+                const remoteVer = Number(remoteData.version);
+
+                // 如果远程版本更新，切换到在线模式
+                if (remoteVer > localVer) {
+                    useOnline = true; // 标记为在线
+                    const newData = getRootNodes(remoteData);
+                    if (newData) {
+                        console.log("发现新版本，切换至在线数据");
+                        renderTree(newData, fileListEl);
+                        
+                        // 提示用户
+                        const tag = document.getElementById('version-display');
+                        tag.style.background = '#d4edda';
+                        tag.style.color = '#155724';
+                    }
+                }
+            }
+        } catch (e) {
+            console.log("无法连接在线更新，保持离线模式", e);
+        }
+    }
+
+    init();
 </script>
 </body>
 </html>
