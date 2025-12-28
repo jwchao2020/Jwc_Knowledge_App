@@ -19,17 +19,22 @@ jobs:
       - name: ⬇️ 拉取代码
         uses: actions/checkout@v4
 
-      # 2. 🐍 设置 Python 环境
+      # 2. 🐍 设置 Python (保持不变)
       - name: 🐍 设置 Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 3. 🐼 安装 Pandoc (转换核心工具)
-      - name: 🐼 安装 Pandoc
+      # 3. 📦 安装 Python 转换库 (修改这里！)
+      # 不再安装 pandoc，改为安装 python 库
+      - name: 📦 安装 Python 依赖
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc
+          pip install mammoth markdown
+
+      # 4. 🔄 运行转换脚本 (保持不变)
+      - name: 🔄 执行文档转换
+        run: |
+          python3 build_html.py
 
       # 4. 🔄 运行转换脚本 (Word -> HTML)
       - name: 🔄 执行文档转换
