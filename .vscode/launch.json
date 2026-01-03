@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Clang Debug (CodeLLDB)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}.exe",
+            "args": [],
+            "cwd": "${fileDirname}",
+            "preLaunchTask": "Clang Build", // 调试前自动运行上面的编译任务
+            "console": "integratedTerminal" // 使用 VS Code 的集成终端显示输出
+        }
+    ]
+}
