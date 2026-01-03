@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Clang Build", // 任务名称
+            "command": "clang++",
+            "args": [
+                "-std=c++17",
+                "-g", // 生成调试信息
+                "${file}", // 当前打开的文件
+                "-o",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe" // 输出为同名exe
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
