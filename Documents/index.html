@@ -14,7 +14,7 @@
     <style>
         /* === 1. 核心变量 (iOS 风格) === */
         :root {
-            --primary: #10b981;       /* 翡翠绿 */
+            --primary: #10b981;       
             --primary-bg: rgba(16, 185, 129, 0.08);
             --sidebar-bg: #f8fafc;    
             --content-bg: #ffffff;
@@ -151,9 +151,12 @@
         #pdf-scroll { flex: 1; overflow-y: auto; padding: 20px 0; text-align: center; -webkit-overflow-scrolling: touch; background: #f1f5f9; }
         .pdf-page-canvas { max-width: 100%; height: auto; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: white; }
 
-        /* FAB */
+        /* FAB (悬浮按钮) */
         #fab-menu {
-            position: fixed; bottom: 24px; right: 24px; width: var(--fab-size); height: var(--fab-size);
+            position: fixed; 
+            bottom: 24px; 
+            left: 24px; /* 🟢 修改：从 right 改为 left */
+            width: var(--fab-size); height: var(--fab-size);
             background: var(--primary); color: white; border-radius: 16px;
             box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
             display: none; align-items: center; justify-content: center;
@@ -165,6 +168,13 @@
             position: absolute; inset: 0; background: rgba(255,255,255,0.9);
             display: none; align-items: center; justify-content: center; flex-direction: column;
             z-index: 100; color: var(--primary);
+        }
+
+        /* 🟢 左侧边缘手势感应区 (隐形) */
+        #edge-gesture-zone {
+            position: fixed; top: 0; left: 0; width: 25px; height: 100%;
+            z-index: 9999; 
+            background: transparent;
         }
 
         /* === 移动端响应式 === */
@@ -189,6 +199,9 @@
         <symbol id="icon-back" viewBox="0 0 24 24"><path d="M20,11H7.83l5.59-5.59L12,4l-8,8l8,8l1.41-1.41L7.83,13H20V11z" fill="currentColor"/></symbol>
     </svg>
 
+    <!-- 🟢 左侧边缘手势感应区 -->
+    <div id="edge-gesture-zone"></div>
+
     <div id="sidebar">
         <div class="sidebar-header">
             <div class="app-logo">
@@ -206,6 +219,7 @@
     <div id="main-area">
         <div id="top-bar">
             <div class="bar-left">
+                <!-- 返回按钮 (现在作为手势的备选) -->
                 <button id="back-btn" class="tool-btn" style="display:none" onclick="goBack()">
                     <svg class="svg-icon"><use href="#icon-back"></use></svg>
                 </button>
@@ -230,6 +244,7 @@
         </div>
     </div>
 
+    <!-- 左下角悬浮菜单 -->
     <div id="fab-menu" class="visible" onclick="toggleSidebar()">
         <svg class="svg-icon" style="width:24px;height:24px"><use href="#icon-menu"></use></svg>
     </div>
@@ -365,22 +380,8 @@
         document.getElementById('page-title').innerText = isRoot ? '知识库首页' : '文件夹';
         document.getElementById('back-btn').style.display = isRoot ? 'none' : 'flex';
         
-        // 根目录 Grid，子目录 List
         if (!isRoot) grid.classList.add('list-mode');
         else grid.classList.remove('list-mode');
-
-        // 返回按钮
-        if (!isRoot) {
-            const backCard = document.createElement('div');
-            backCard.className = 'card';
-            backCard.style.background = '#f1f5f9';
-            backCard.onclick = goBack;
-            backCard.innerHTML = `
-                <div class="card-icon-box" style="background:#e2e8f0; color:#64748b"><svg class="svg-icon"><use href="#icon-back"></use></svg></div>
-                <div class="card-title">返回上一级</div>
-            `;
-            grid.appendChild(backCard);
-        }
 
         nodes.forEach(node => {
             const isFolder = node.children && node.children.length > 0;
@@ -485,7 +486,6 @@
         });
         document.getElementById('reader-tools').style.display = 'none';
         const fab = document.getElementById('fab-menu');
-        // FAB 仅在 Grid 模式下显示
         if (id === 'grid-view') fab.classList.add('visible');
         else fab.classList.remove('visible');
     }
@@ -525,26 +525,25 @@
         overlay.classList.toggle('show');
     }
 
-    // 🟢 优化的右滑手势
+    // 🟢 强力边缘手势
+    const edgeZone = document.getElementById('edge-gesture-zone');
     let touchStartX = 0;
     let touchStartY = 0;
-    document.addEventListener('touchstart', e => {
+
+    edgeZone.addEventListener('touchstart', e => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-    }, {passive:true});
-    
-    document.addEventListener('touchend', e => {
+    }, {passive: true});
+
+    edgeZone.addEventListener('touchend', e => {
         const diffX = e.changedTouches[0].clientX - touchStartX;
         const diffY = Math.abs(e.changedTouches[0].clientY - touchStartY);
-        
-        // 判定：向右滑80px以上，且垂直偏移不超过60px（防斜滑误触）
-        // 只要不是在首页根目录，都允许返回（包括子文件夹列表和阅读器）
-        if (diffX > 80 && diffY < 60) {
+        if (diffX > 50 && diffY < 50) {
             if (currentMode !== 'grid' || historyStack.length > 0) {
                 goBack();
             }
         }
-    }, {passive:true});
+    }, {passive: true});
 
     init();
 </script>
