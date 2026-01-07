@@ -108,6 +108,7 @@
 
         #grid-view.list-mode .card { flex-direction: row; padding: 12px 16px; align-items: center; min-height: auto; }
         #grid-view.list-mode .card-icon-box { width: 40px; height: 40px; margin-bottom: 0; margin-right: 14px; }
+        /* 列表模式图标缩小 */
         #grid-view.list-mode .card-icon-box svg { width: 22px; height: 22px; }
         #grid-view.list-mode .card-title { text-align: left; flex: 1; -webkit-line-clamp: 1; }
         #grid-view.list-mode .card-meta { margin-top: 0; background: transparent; }
@@ -118,9 +119,11 @@
         #pdf-scroll { flex: 1; overflow-y: auto; padding: 20px 0; text-align: center; -webkit-overflow-scrolling: touch; background: #f1f5f9; }
         .pdf-page-canvas { max-width: 100%; height: auto; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: white; }
 
-        /* FAB (左下角) */
+        /* 🟢 FAB (左下角) */
         #fab-menu {
-            position: fixed; bottom: 24px; left: 24px;
+            position: fixed; 
+            bottom: 24px; 
+            left: 24px; /* 这里确保是左边 */
             width: var(--fab-size); height: var(--fab-size);
             background: var(--primary); color: white; border-radius: 16px;
             box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
@@ -195,6 +198,7 @@
         </div>
     </div>
 
+    <!-- 左下角悬浮菜单 -->
     <div id="fab-menu" class="visible" onclick="toggleSidebar()">
         <svg class="svg-icon" style="width:24px;height:24px"><use href="#icon-menu"></use></svg>
     </div>
@@ -213,7 +217,7 @@
     let historyStack = []; 
     let currentMode = 'grid';
 
-    // PDF 状态管理
+    // PDF 状态
     let currentPdfDoc = null;
     let currentPdfUrl = '';
     let pdfLoadingTask = null;
@@ -260,6 +264,19 @@
 
     // === 1. 初始化 & 更新 ===
     async function init() {
+      // 🟢 关键：绑定 Capacitor 原生返回键监听 (防止侧滑直接退出 App)
+      if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
+          Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
+              if (currentMode !== 'grid' || historyStack.length > 0) {
+                  // 如果有内部历史，优先内部返回
+                  goBack();
+              } else {
+                  // 如果在首页根目录，则退出 App
+                  Capacitor.Plugins.App.exitApp();
+              }
+          });
+      }
+
       let data = null;
       if (typeof LOCAL_DATA !== 'undefined') {
         data = parseData(LOCAL_DATA);
@@ -343,8 +360,6 @@
       else grid.classList.remove('list-mode');
       switchView('grid-view');
 
-      // 🟢 彻底删除返回卡片 (只保留文件列表)
-
       nodes.forEach(node => {
         const isFolder = node.children && node.children.length > 0;
         const title = node.title || node.name;
@@ -370,7 +385,7 @@
 
     // === 3. 导航核心 ===
     function enterFolder(parentNodes, childrenNodes) {
-      // 🟢 必须写入历史，这样系统侧滑才会触发 popstate 而不是退出 App
+      // 使用 pushState 模拟历史记录，以便兼容系统侧滑返回
       history.pushState({ mode: 'folder', depth: historyStack.length + 1 }, null, '#folder');
       historyStack.push(parentNodes);
       renderGrid(childrenNodes);
@@ -380,7 +395,6 @@
       if (!path) return;
       const fullPath = useOnline ? (CDN_ROOT + path) : path;
       const url = encodeURI(fullPath);
-      // 🟢 打开文件也写入历史
       history.pushState({ mode: 'reader', file: title }, null, '#reader');
       document.getElementById('page-title').innerText = title;
       document.getElementById('back-btn').style.display = 'flex';
@@ -391,10 +405,8 @@
     // 🟢 统一处理所有后退 (包括系统侧滑)
     window.addEventListener('popstate', () => {
       if (currentMode !== 'grid') {
-        // 从阅读器返回
         closeReader(true);
       } else if (historyStack.length > 0) {
-        // 从文件夹返回
         const parent = historyStack.pop();
         renderGrid(parent);
       }
@@ -486,7 +498,6 @@
     }
 
     function goBack() {
-      // 🟢 手动点击返回时，模拟系统后退，统一触发 popstate 逻辑
       history.back();
     }
 
@@ -522,11 +533,9 @@
       overlay.classList.toggle('show');
     }
 
-    // 🟢 内容区手势监听 (智能识别非边缘滑动)
+    // 🟢 内容区手势监听 (辅助返回)
     let touchStartX = 0;
     let touchStartY = 0;
-    
-    // 只监听主要内容区，防止干扰侧边栏
     const gestureArea = document.getElementById('main-area');
 
     gestureArea.addEventListener('touchstart', e => {
@@ -539,12 +548,8 @@
         const diffY = Math.abs(e.changedTouches[0].clientY - touchStartY);
         const startX = touchStartX;
 
-        // 逻辑：
-        // 1. startX > 20: 避开左边缘 20px，交给系统侧滑处理 (防冲突核心)
-        // 2. diffX > 80: 向右滑动的距离足够长
-        // 3. diffY < 50: 垂直方向偏移小 (确定是横滑)
+        // 逻辑：startX > 20 避开边缘，交给系统；中间右滑触发 JS 返回
         if (startX > 20 && diffX > 80 && diffY < 50) {
-            // 如果不在根目录，则允许手势返回
             if (currentMode !== 'grid' || historyStack.length > 0) {
                 goBack();
             }
