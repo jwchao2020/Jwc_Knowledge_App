@@ -73,7 +73,6 @@
         }
         .bar-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
         .page-title { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 4px; }
-        
         .tool-btn {
             width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent;
             display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-light);
@@ -200,7 +199,6 @@
                 </button>
                 <div class="page-title" id="page-title">首页</div>
             </div>
-            <!-- 已移除缩放工具栏 -->
         </div>
 
         <div id="views-container">
@@ -239,6 +237,7 @@
     const CDN_ROOT = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}/Documents/`;
 
     let useOnline = false;
+    let currentScale = 1.2; // 默认缩放
     let historyStack = []; 
     let currentMode = 'grid';
     let lastBackTime = 0;
@@ -257,13 +256,15 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     }
 
-    // === 🛠️ 启动逻辑 ===
+    // === 🛠️ 启动逻辑 (Hash 路由强力防退) ===
     function initApp() {
-        // 首页垫片 (防止左滑退出)
-        window.history.replaceState({ mode: 'root' }, null, '');
-        window.history.pushState({ mode: 'home' }, null, '#home');
-
-        // Capacitor 原生返回拦截
+        // 1. 初始化 Hash 路由
+        // 如果没有 hash，默认进入 #home
+        if (!location.hash) {
+            window.location.hash = "#home";
+        }
+        
+        // 2. Capacitor 原生返回拦截
         if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
             Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
                 if (currentMode !== 'grid' || historyStack.length > 0) {
@@ -275,11 +276,9 @@
                     } else {
                         lastBackTime = now;
                         showToast();
-                        // 补回垫片
+                        // 确保我们在首页
                         if (location.hash !== '#home') {
-                            history.pushState({ mode: 'home' }, null, '#home');
-                        } else {
-                            history.replaceState({ mode: 'home' }, null, '#home');
+                             window.history.pushState(null, null, '#home');
                         }
                     }
                 }
@@ -287,6 +286,37 @@
         }
 
         initData();
+    }
+
+    // === 🟢 核心路由控制 (Popstate) ===
+    window.addEventListener('popstate', (e) => {
+        // 系统侧滑返回会触发这里
+        
+        // 情况A: 从阅读器返回
+        if (currentMode !== 'grid') {
+            closeReader(true);
+            return;
+        } 
+        
+        // 情况B: 从子文件夹返回
+        if (historyStack.length > 0) {
+            const parent = historyStack.pop();
+            renderGrid(parent);
+            return;
+        } 
+        
+        // 情况C: 在根目录继续后退 (准备退出)
+        // 此时 hash 可能变为空，我们需要把它补回 #home，并提示用户
+        if (location.hash !== '#home') {
+            window.history.pushState(null, null, '#home');
+            // 这里可以选做：不调用原生退出，而是显示 Toast
+            // 因为 Capacitor 拦截器可能已经处理了退出逻辑
+        }
+    });
+
+    // 手动调用返回
+    function goBack() {
+        window.history.back(); 
     }
 
     async function initData() {
@@ -322,6 +352,7 @@
     }
 
     function parseRemoteData(txt) {
+        // 🟢 修复：非贪婪匹配，兼容不同换行格式
         const m = txt.match(/const\s+LOCAL_DATA\s*=\s*([\s\S]*?)(?:;\s*\n|;\s*$)/);
         if (!m || !m[1]) return null;
         try { return new Function('"use strict"; return (' + m[1] + ')')(); } 
@@ -333,7 +364,6 @@
         return rawData.tree || rawData.list || rawData.children || [];
     }
 
-    // 通用路径编码
     function encodePath(path) {
         return path.split('/').map(encodeURIComponent).join('/');
     }
@@ -423,33 +453,19 @@
     }
 
     function enterFolder(parent, children) {
-        history.pushState({ mode: 'folder' }, null, '#folder');
+        // 🟢 显式 Hash 导航
+        window.location.hash = "#folder";
         historyStack.push(parent);
         renderGrid(children);
     }
 
-    function goBack() {
-        history.back(); 
-    }
-
-    // 🟢 Root Popstate 逻辑 + 垫片补回
-    window.addEventListener('popstate', (e) => {
-        if (currentMode !== 'grid') {
-            closeReader();
-        } else if (historyStack.length > 0) {
-            const parent = historyStack.pop();
-            renderGrid(parent);
-        } else {
-            if (location.hash !== '#home') {
-                history.replaceState({ mode: 'root' }, null, '');
-                history.pushState({ mode: 'home' }, null, '#home');
-            }
-        }
-    });
-
     function openFile(path, title) {
         if (!path) return;
-        history.pushState({ mode: 'reader' }, null, '#reader');
+        
+        // 🟢 显式 Hash 导航
+        window.location.hash = "#reader";
+        currentMode = 'reader'; // 标记状态
+
         document.getElementById('page-title').innerText = title;
         document.getElementById('back-btn').style.display = 'flex';
         
@@ -474,16 +490,26 @@
             let html = await res.text();
             
             const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+            
+            // 辅助：判断是否绝对路径
             const isAbs = (v) => /^(https?:|data:|#|mailto:|tel:)/i.test(v);
-            const toAbsUrl = (v) => { try { return new URL(v, baseUrl).href; } catch { return v; } };
-            const replaceFn = (m, attr, val) => (!isAbs(val) ? `${attr}="${toAbsUrl(val)}"` : m);
+            const toAbsUrl = (v) => {
+                try { return new URL(v, baseUrl).href; }
+                catch { return v; }
+            };
+            const replaceFn = (m, attr, val) => {
+                if (!isAbs(val)) return `${attr}="${toAbsUrl(val)}"`;
+                return m;
+            };
 
+            // 替换双引号和单引号属性
             html = html.replace(/(src)="([^"]+)"/g, replaceFn);
             html = html.replace(/(href)="([^"]+)"/g, replaceFn);
-            html = html.replace(/(src)='([^']+)'/g, (m, a, v) => replaceFn(m, a, v));
-            html = html.replace(/(href)='([^']+)'/g, (m, a, v) => replaceFn(m, a, v));
+            html = html.replace(/(src)='([^']+)'/g, (m,a,v)=>replaceFn(m,a,v));
+            html = html.replace(/(href)='([^']+)'/g, (m,a,v)=>replaceFn(m,a,v));
 
             container.innerHTML = html;
+            
             if (window.MathJax) MathJax.typesetPromise([container]);
 
         } catch (e) {
@@ -523,6 +549,7 @@
             const scrollEl = document.getElementById('pdf-scroll');
             const clientW = scrollEl.clientWidth - 40;
 
+            // 1. 获取第一页比例估算
             const firstPage = await pdf.getPage(1);
             const firstVp = firstPage.getViewport({ scale: 1 });
             const pageAspect = firstVp.height / firstVp.width; 
@@ -623,6 +650,7 @@
         if (historyStack.length === 0) document.getElementById('back-btn').style.display = 'none';
     }
 
+    // 🟢 修复：switchView 逻辑
     function switchView(id) {
         ['grid-view', 'html-view', 'pdf-view'].forEach(v => {
             const el = document.getElementById(v);
@@ -661,7 +689,7 @@
         el.className = `version-badge ${status === 'NEW' || status === 'LATEST' ? 'online' : ''}`;
     }
 
-    // 手势返回 (中间屏幕右滑)
+    // 🟢 内容区手势监听 (辅助返回)
     let touchStartX = 0;
     let touchStartY = 0;
     const gestureArea = document.getElementById('main-area');
