@@ -1,248 +1,243 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Jwc 知识库</title>
-  <meta name="theme-color" content="#ffffff" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jwc 知识库</title>
+    <meta name="theme-color" content="#ffffff">
+    
+    <script src="lib/pdfjs/pdf.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-  <!-- PWA / WebApp（可选） -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
+    <style>
+        :root {
+            --primary: #10b981;       
+            --primary-bg: rgba(16, 185, 129, 0.08);
+            --sidebar-bg: #f8fafc;    
+            --content-bg: #ffffff;
+            --text-main: #334155;     
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --sidebar-width: 280px;
+            --header-height: 56px;
+            --fab-size: 50px;
+        }
 
-  <script src="lib/pdfjs/pdf.min.js"></script>
-  <script id="MathJax-script" async
-          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--content-bg);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            overscroll-behavior: none;
+        }
 
-  <style>
-    :root {
-      --primary: #10b981;
-      --primary-bg: rgba(16, 185, 129, 0.08);
-      --sidebar-bg: #f8fafc;
-      --content-bg: #ffffff;
-      --text-main: #334155;
-      --text-light: #64748b;
-      --border: #e2e8f0;
-      --sidebar-width: 280px;
-      --header-height: 56px;
-      --fab-size: 50px;
-    }
+        .svg-icon { width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s; vertical-align: text-bottom; }
+        
+        /* 侧边栏 */
+        #sidebar {
+            width: var(--sidebar-width); height: 100%; background: var(--sidebar-bg);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            flex-shrink: 0; z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar-header {
+            height: var(--header-height); padding: 0 20px; display: flex; align-items: center; 
+            justify-content: space-between; border-bottom: 1px solid var(--border);
+        }
+        .app-logo { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .version-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #64748b; font-weight: 500; }
+        .version-badge.online { background: #dcfce7; color: #15803d; }
+        #tree-container { flex: 1; overflow-y: auto; padding: 10px; }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        .node-content {
+            padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; 
+            font-size: 14px; margin-bottom: 2px; transition: background 0.1s;
+        }
+        .node-content:active { background: #e2e8f0; }
+        .node-content.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-weight: 600; }
+        .arrow { margin-left: auto; font-size: 10px; color: #cbd5e1; transition: transform 0.2s; }
+        .sub-group { display: none; padding-left: 12px; border-left: 1px solid #e2e8f0; margin-left: 11px; }
+        .sub-group.show { display: block; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--content-bg);
-      color: var(--text-main);
-      margin: 0;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      overscroll-behavior: none;
-    }
+        /* 主区域 */
+        #main-area { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; width: 100%; }
 
-    .svg-icon { width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s; vertical-align: text-bottom; }
+        #top-bar {
+            height: var(--header-height); border-bottom: 1px solid var(--border); display: flex; 
+            align-items: center; justify-content: space-between; padding: 0 12px; 
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 40; flex-shrink: 0;
+        }
+        .bar-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+        .page-title { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 4px; }
+        
+        .tool-btn {
+            width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-light);
+        }
+        .tool-btn:active { background: #f1f5f9; color: var(--primary); }
 
-    /* 侧边栏 */
-    #sidebar {
-      width: var(--sidebar-width); height: 100%; background: var(--sidebar-bg);
-      border-right: 1px solid var(--border); display: flex; flex-direction: column;
-      flex-shrink: 0; z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .sidebar-header {
-      height: var(--header-height); padding: 0 20px; display: flex; align-items: center;
-      justify-content: space-between; border-bottom: 1px solid var(--border);
-    }
-    .app-logo { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .version-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #64748b; font-weight: 500; }
-    .version-badge.online { background: #dcfce7; color: #15803d; }
-    #tree-container { flex: 1; overflow-y: auto; padding: 10px; }
+        #views-container { flex: 1; position: relative; overflow: hidden; }
 
-    .node-content {
-      padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center;
-      font-size: 14px; margin-bottom: 2px; transition: background 0.1s;
-    }
-    .node-content:active { background: #e2e8f0; }
-    .arrow { margin-left: auto; font-size: 10px; color: #cbd5e1; transition: transform 0.2s; }
-    .sub-group { display: none; padding-left: 12px; border-left: 1px solid #e2e8f0; margin-left: 11px; }
-    .sub-group.show { display: block; }
+        /* 网格视图 */
+        #grid-view {
+            position: absolute; inset: 0; overflow-y: auto; padding: 20px;
+            display: grid; gap: 16px; align-content: start;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            background: #fafafa;
+        }
+        #grid-view.list-mode { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 
-    /* 主区域 */
-    #main-area { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; width: 100%; }
+        .card {
+            background: #fff; border: 1px solid var(--border); border-radius: 16px;
+            padding: 20px; display: flex; flex-direction: column; align-items: center;
+            cursor: pointer; transition: all 0.2s; position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .card:active { transform: scale(0.98); background: #f8fafc; }
+        
+        .card-icon-box {
+            width: 52px; height: 52px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+        }
+        .card-icon-box svg { width: 28px; height: 28px; }
+        .card-title { font-size: 14px; font-weight: 600; text-align: center; line-height: 1.4; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-meta { font-size: 11px; color: var(--text-light); margin-top: 6px; background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
 
-    #top-bar {
-      height: var(--header-height); border-bottom: 1px solid var(--border); display: flex;
-      align-items: center; justify-content: space-between; padding: 0 12px;
-      background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 40; flex-shrink: 0;
-    }
-    .bar-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
-    .page-title { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 4px; }
-    .tool-btn {
-      width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent;
-      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-light);
-    }
-    .tool-btn:active { background: #f1f5f9; color: var(--primary); }
+        #grid-view.list-mode .card { flex-direction: row; padding: 12px 16px; align-items: center; min-height: auto; }
+        #grid-view.list-mode .card-icon-box { width: 40px; height: 40px; margin-bottom: 0; margin-right: 14px; }
+        #grid-view.list-mode .card-icon-box svg { width: 22px; height: 22px; }
+        #grid-view.list-mode .card-title { text-align: left; flex: 1; -webkit-line-clamp: 1; }
+        #grid-view.list-mode .card-meta { margin-top: 0; background: transparent; }
 
-    #views-container { flex: 1; position: relative; overflow: hidden; }
+        /* 阅读器容器 */
+        .reader-container {
+            position: absolute; inset: 0; background: #fff; display: none; flex-direction: column;
+        }
 
-    /* 网格视图 */
-    #grid-view {
-      position: absolute; inset: 0; overflow-y: auto; padding: 20px;
-      display: grid; gap: 16px; align-content: start;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      background: #fafafa;
-    }
-    #grid-view.list-mode { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+        /* HTML 内容容器 */
+        #html-content {
+            flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch;
+            max-width: 800px; margin: 0 auto; width: 100%;
+        }
+        #html-content img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        #html-content table { border-collapse: collapse; width: 100%; margin: 10px 0; overflow-x: auto; display: block; }
+        #html-content th, #html-content td { border: 1px solid #ddd; padding: 8px; }
+        #html-content pre { background: #f1f5f9; padding: 12px; border-radius: 8px; overflow-x: auto; }
+        #html-content blockquote { border-left: 4px solid var(--primary); margin: 0; padding-left: 16px; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 4px; }
 
-    .card {
-      background: #fff; border: 1px solid var(--border); border-radius: 16px;
-      padding: 20px; display: flex; flex-direction: column; align-items: center;
-      cursor: pointer; transition: all 0.2s; position: relative;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    }
-    .card:active { transform: scale(0.98); background: #f8fafc; }
+        /* PDF 容器 */
+        #pdf-view { background: #525659; }
+        #pdf-scroll { flex: 1; overflow: auto; padding: 20px 0; text-align: center; -webkit-overflow-scrolling: touch; }
+        .pdf-page-canvas { display: block; width: 100%; height: auto; }
+        .pdf-page-container { margin: 0 auto 15px; position: relative; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-height: 200px; }
 
-    .card-icon-box {
-      width: 52px; height: 52px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
-    }
-    .card-icon-box svg { width: 28px; height: 28px; }
-    .card-title { font-size: 14px; font-weight: 600; text-align: center; line-height: 1.4; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .card-meta { font-size: 11px; color: var(--text-light); margin-top: 6px; background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
+        /* FAB (左下角) */
+        #fab-menu {
+            position: fixed; bottom: 24px; left: 24px; 
+            width: var(--fab-size); height: var(--fab-size);
+            background: var(--primary); color: white; border-radius: 16px;
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+            display: none; align-items: center; justify-content: center;
+            z-index: 90; cursor: pointer; transition: transform 0.2s;
+        }
+        #fab-menu:active { transform: scale(0.9); }
 
-    #grid-view.list-mode .card { flex-direction: row; padding: 12px 16px; align-items: center; min-height: auto; }
-    #grid-view.list-mode .card-icon-box { width: 40px; height: 40px; margin-bottom: 0; margin-right: 14px; }
-    #grid-view.list-mode .card-icon-box svg { width: 22px; height: 22px; }
-    #grid-view.list-mode .card-title { text-align: left; flex: 1; -webkit-line-clamp: 1; }
-    #grid-view.list-mode .card-meta { margin-top: 0; background: transparent; }
+        /* Toast 提示 */
+        #toast {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px;
+            font-size: 13px; z-index: 200; display: none;
+        }
 
-    /* 阅读器容器 */
-    .reader-container { position: absolute; inset: 0; background: #fff; display: none; flex-direction: column; }
+        .loading {
+            position: absolute; inset: 0; background: rgba(255,255,255,0.9);
+            display: none; align-items: center; justify-content: center; flex-direction: column;
+            z-index: 100; color: var(--primary);
+        }
 
-    /* HTML 内容容器 */
-    #html-content {
-      flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch;
-      max-width: 800px; margin: 0 auto; width: 100%;
-    }
-    #html-content img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    #html-content table { border-collapse: collapse; width: 100%; margin: 10px 0; overflow-x: auto; display: block; }
-    #html-content th, #html-content td { border: 1px solid #ddd; padding: 8px; }
-    #html-content pre { background: #f1f5f9; padding: 12px; border-radius: 8px; overflow-x: auto; }
-    #html-content blockquote { border-left: 4px solid var(--primary); margin: 0; padding-left: 16px; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 4px; }
-
-    /* PDF 容器 */
-    #pdf-view { background: #525659; }
-    #pdf-scroll {
-      flex: 1; overflow: auto; padding: 20px 0; text-align: center; -webkit-overflow-scrolling: touch;
-      /* ✅ 默认：单指可滚动/平移；禁用系统 pinch-zoom（我们接管） */
-      touch-action: pan-x pan-y;
-    }
-    .pdf-page-canvas { display: block; width: 100%; height: auto; }
-    .pdf-page-container { margin: 0 auto 15px; position: relative; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-height: 200px; }
-
-    /* FAB */
-    #fab-menu {
-      position: fixed; bottom: 24px; left: 24px;
-      width: var(--fab-size); height: var(--fab-size);
-      background: var(--primary); color: white; border-radius: 16px;
-      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-      display: none; align-items: center; justify-content: center;
-      z-index: 90; cursor: pointer; transition: transform 0.2s;
-    }
-    #fab-menu:active { transform: scale(0.9); }
-
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px;
-      font-size: 13px; z-index: 200; display: none;
-    }
-
-    .loading {
-      position: absolute; inset: 0; background: rgba(255,255,255,0.9);
-      display: none; align-items: center; justify-content: center; flex-direction: column;
-      z-index: 100; color: var(--primary);
-    }
-
-    @media (max-width: 768px) {
-      #sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
-      #sidebar.open { transform: translateX(0); }
-      #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 45; }
-      #overlay.show { display: block; }
-      #grid-view.list-mode .card-meta { display: none; }
-      #fab-menu.visible { display: flex; }
-    }
-  </style>
+        @media (max-width: 768px) {
+            #sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+            #sidebar.open { transform: translateX(0); }
+            #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 45; }
+            #overlay.show { display: block; }
+            #grid-view.list-mode .card-meta { display: none; }
+            #fab-menu.visible { display: flex; }
+        }
+    </style>
 </head>
 
 <body>
-  <svg style="display:none">
-    <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M20,6h-8l-2-2H4C2.9,4,2,4.9,2,6v12c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V8C22,6.9,21.1,6,20,6z" fill="currentColor"/></symbol>
-    <symbol id="icon-file" viewBox="0 0 24 24"><path d="M14,2H6C4.9,2,4,2.9,4,4v16c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V8L14,2z M16,18H8v-2h8V18z M16,14H8v-2h8V14z M13,9V3.5 L18.5,9H13z" fill="currentColor"/></symbol>
-    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M3,18h18v-2H3V18z M3,13h18v-2H3V13z M3,6v2h18V6H3z" fill="currentColor"/></symbol>
-    <symbol id="icon-back" viewBox="0 0 24 24"><path d="M20,11H7.83l5.59-5.59L12,4l-8,8l8,8l1.41-1.41L7.83,13H20V11z" fill="currentColor"/></symbol>
-  </svg>
+    <svg style="display:none">
+        <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M20,6h-8l-2-2H4C2.9,4,2,4.9,2,6v12c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V8C22,6.9,21.1,6,20,6z" fill="currentColor"/></symbol>
+        <symbol id="icon-file" viewBox="0 0 24 24"><path d="M14,2H6C4.9,2,4,2.9,4,4v16c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V8L14,2z M16,18H8v-2h8V18z M16,14H8v-2h8V14z M13,9V3.5 L18.5,9H13z" fill="currentColor"/></symbol>
+        <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M3,18h18v-2H3V18z M3,13h18v-2H3V13z M3,6v2h18V6H3z" fill="currentColor"/></symbol>
+        <symbol id="icon-back" viewBox="0 0 24 24"><path d="M20,11H7.83l5.59-5.59L12,4l-8,8l8,8l1.41-1.41L7.83,13H20V11z" fill="currentColor"/></symbol>
+    </svg>
 
-  <div id="sidebar">
-    <div class="sidebar-header">
-      <div class="app-logo">
-        <div style="background:var(--primary); width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; margin-right:8px;">
-          <svg class="svg-icon" style="color:white; width:18px; height:18px;"><use href="#icon-folder"></use></svg>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="app-logo">
+                <div style="background:var(--primary); width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; margin-right:8px;">
+                    <svg class="svg-icon" style="color:white; width:18px; height:18px;"><use href="#icon-folder"></use></svg>
+                </div>
+                <span>知识库</span>
+            </div>
+            <div id="version-badge" class="version-badge">Loading...</div>
         </div>
-        <span>知识库</span>
-      </div>
-      <div id="version-badge" class="version-badge">Loading...</div>
+        <div id="tree-container"></div>
     </div>
-    <div id="tree-container"></div>
-  </div>
-  <div id="overlay" onclick="toggleSidebar()"></div>
+    <div id="overlay" onclick="toggleSidebar()"></div>
 
-  <div id="main-area">
-    <div id="top-bar">
-      <div class="bar-left">
-        <button id="back-btn" class="tool-btn" style="display:none" onclick="goBack()">
-          <svg class="svg-icon"><use href="#icon-back"></use></svg>
-        </button>
-        <div class="page-title" id="page-title">首页</div>
-      </div>
+    <div id="main-area">
+        <div id="top-bar">
+            <div class="bar-left">
+                <button id="back-btn" class="tool-btn" style="display:none" onclick="goBack()">
+                    <svg class="svg-icon"><use href="#icon-back"></use></svg>
+                </button>
+                <div class="page-title" id="page-title">首页</div>
+            </div>
+            
+            <!-- 🟢 缩放工具栏 -->
+            <div id="reader-tools" style="display:none; gap:4px;">
+                <button class="tool-btn" onclick="zoomPdf(-0.2)">－</button>
+                <span id="zoom-val" style="font-size:12px; min-width:32px; text-align:center;">100%</span>
+                <button class="tool-btn" onclick="zoomPdf(0.2)">＋</button>
+            </div>
+        </div>
 
-      <div id="reader-tools" style="display:none; gap:4px;">
-        <button class="tool-btn" onclick="zoomPdf(-0.2)">－</button>
-        <span id="zoom-val" style="font-size:12px; min-width:32px; text-align:center;">100%</span>
-        <button class="tool-btn" onclick="zoomPdf(0.2)">＋</button>
-      </div>
+        <div id="views-container">
+            <div id="grid-view" class="visible"></div>
+            
+            <!-- HTML 阅读器 -->
+            <div id="html-view" class="reader-container">
+                <div id="html-content"></div>
+            </div>
+            
+            <!-- PDF 阅读器 -->
+            <div id="pdf-view" class="reader-container">
+                <div id="pdf-scroll"><div id="pdf-container"></div></div>
+            </div>
+
+            <div id="loading" class="loading">
+                <div style="font-size:32px; margin-bottom:10px;">⏳</div>
+                <div id="loading-text">加载中...</div>
+            </div>
+        </div>
     </div>
 
-    <div id="views-container">
-      <div id="grid-view" class="visible"></div>
-
-      <div id="html-view" class="reader-container">
-        <div id="html-content"></div>
-      </div>
-
-      <div id="pdf-view" class="reader-container">
-        <div id="pdf-scroll"><div id="pdf-container"></div></div>
-      </div>
-
-      <div id="loading" class="loading">
-        <div style="font-size:32px; margin-bottom:10px;">⏳</div>
-        <div id="loading-text">加载中...</div>
-      </div>
+    <div id="fab-menu" class="visible" onclick="toggleSidebar()">
+        <svg class="svg-icon" style="width:24px;height:24px"><use href="#icon-menu"></use></svg>
     </div>
-  </div>
 
-  <div id="fab-menu" class="visible" onclick="toggleSidebar()">
-    <svg class="svg-icon" style="width:24px;height:24px"><use href="#icon-menu"></use></svg>
-  </div>
+    <div id="toast">再按一次退出应用</div>
 
-  <div id="toast">再按一次退出应用</div>
+    <script src="data.js"></script>
 
-  <script src="data.js"></script>
-
-  <script>
-    const DEBUG_PINCH = false;
-
+<script>
     // === 配置 ===
     const USER = 'jwchao2020';
     const REPO = 'Jwc_Knowledge_App';
@@ -250,8 +245,8 @@
     const CDN_ROOT = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}/Documents/`;
 
     let useOnline = false;
-    let currentScale = 1.0;
-    let historyStack = [];
+    let currentScale = 1.0; // 默认 100%
+    let historyStack = []; 
     let currentMode = 'grid';
     let lastBackTime = 0;
 
@@ -261,427 +256,443 @@
     let pdfLoadingTask = null;
     let pdfRenderSeq = 0;
     let pdfIntersectionObserver = null;
-
-    // pinch 状态
+    
+    // Pinch 状态
     let pinchState = null;
     let pinchRaf = 0;
     let pendingPdfScroll = null;
+    let zoomTimer = null;
+    
+    // 渲染精度
+    const RENDER_QUALITY = 2.0;
 
     if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     }
 
-    // ========= 路由工具 =========
-    function navReplace(state, hash) { history.replaceState(state, '', hash); }
-    function navPush(state, hash) { history.pushState(state, '', hash); }
-
+    // === 🛠️ 启动逻辑 ===
     function initApp() {
-      navReplace({ mode: 'guard' }, '#guard');
-      navPush({ mode: 'home' }, '#home');
-
-      setupPdfGestures();     // ✅ 关键：先绑手势（含 Touch 兜底）
-      initData();
-    }
-
-    function goBack() { history.back(); }
-
-    function onBackNavigation() {
-      if (currentMode !== 'grid') { closeReader(); return; }
-      if (historyStack.length > 0) {
-        const parent = historyStack.pop();
-        renderGrid(parent);
-        return;
-      }
-      if (location.hash === '#guard' || !location.hash) {
-        navPush({ mode: 'home' }, '#home');
-        const now = Date.now();
-        if (now - lastBackTime >= 2000) {
-          lastBackTime = now;
-          showToast();
+        if (!location.hash) {
+            window.location.hash = "#home";
         }
-      }
+        
+        setupPdfGestures();
+
+        if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
+            Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
+                if (currentMode !== 'grid' || historyStack.length > 0) {
+                    goBack();
+                } else {
+                    const now = Date.now();
+                    if (now - lastBackTime < 2000) {
+                        Capacitor.Plugins.App.exitApp();
+                    } else {
+                        lastBackTime = now;
+                        showToast();
+                        if (location.hash !== '#home') {
+                             window.history.pushState(null, null, '#home');
+                        }
+                    }
+                }
+            });
+        }
+
+        initData();
     }
 
-    window.addEventListener('popstate', onBackNavigation);
-    window.addEventListener('hashchange', onBackNavigation);
+    // === 🟢 核心路由控制 ===
+    window.addEventListener('popstate', (e) => {
+        if (currentMode !== 'grid') {
+            closeReader(true);
+            return;
+        } 
+        if (historyStack.length > 0) {
+            const parent = historyStack.pop();
+            renderGrid(parent);
+            return;
+        } 
+        if (location.hash !== '#home') {
+            window.history.pushState(null, null, '#home');
+        }
+    });
+
+    function goBack() { window.history.back(); }
 
     async function initData() {
-      let data = null;
-      if (typeof LOCAL_DATA !== 'undefined') {
-        data = parseData(LOCAL_DATA);
-        updateBadge('OFFLINE', LOCAL_DATA.version);
-      }
-
-      try {
-        const res = await fetch(CDN_ROOT + 'data.js?t=' + Date.now());
-        if (res.ok) {
-          const txt = await res.text();
-          const remoteData = parseRemoteData(txt);
-          if (remoteData) {
-            const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version || 0) : 0;
-            const remoteVer = Number(remoteData.version || 0);
-            if (remoteVer > localVer) {
-              useOnline = true;
-              data = parseData(remoteData);
-              updateBadge('NEW', remoteVer);
-            } else {
-              updateBadge('LATEST', localVer);
-            }
-          }
+        let data = null;
+        if (typeof LOCAL_DATA !== 'undefined') {
+            data = parseData(LOCAL_DATA);
+            updateBadge('OFFLINE', LOCAL_DATA.version);
         }
-      } catch (e) {}
 
-      if (data) {
-        renderSidebar(data);
-        renderGrid(data);
-      }
+        try {
+            const res = await fetch(CDN_ROOT + 'data.js?t=' + Date.now());
+            if (res.ok) {
+                const txt = await res.text();
+                const remoteData = parseRemoteData(txt);
+                if (remoteData) {
+                    const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version || 0) : 0;
+                    const remoteVer = Number(remoteData.version || 0);
+                    if (remoteVer > localVer) {
+                        useOnline = true;
+                        data = parseData(remoteData);
+                        updateBadge('NEW', remoteVer);
+                    } else {
+                        updateBadge('LATEST', localVer);
+                    }
+                }
+            }
+        } catch(e) { console.log('Offline check failed'); }
+
+        if (data) {
+            renderSidebar(data);
+            renderGrid(data);
+        }
     }
 
     function parseRemoteData(txt) {
-      const m = txt.match(/const\s+LOCAL_DATA\s*=\s*([\s\S]*?)(?:;\s*\n|;\s*$)/);
-      if (!m || !m[1]) return null;
-      try { return new Function('"use strict"; return (' + m[1] + ')')(); }
-      catch (e) { return null; }
+        const m = txt.match(/const\s+LOCAL_DATA\s*=\s*([\s\S]*?)(?:;\s*\n|;\s*$)/);
+        if (!m || !m[1]) return null;
+        try { return new Function('"use strict"; return (' + m[1] + ')')(); } 
+        catch (e) { return null; }
     }
 
     function parseData(rawData) {
-      if (Array.isArray(rawData)) return rawData;
-      return rawData.tree || rawData.list || rawData.children || [];
+        if (Array.isArray(rawData)) return rawData;
+        return rawData.tree || rawData.list || rawData.children || [];
     }
 
     function encodePath(path) {
-      return path.split('/').map(encodeURIComponent).join('/');
+        return path.split('/').map(encodeURIComponent).join('/');
     }
 
+    // === 渲染 ===
     function getTypeStyle(name, isFolder) {
-      if (isFolder) return { icon: '#icon-folder', color: '#f59e0b', bg: '#fef3c7' };
-      const n = (name || '').toLowerCase();
-      if (n.endsWith('.pdf')) return { icon: '#icon-file', color: '#ef4444', bg: '#fee2e2' };
-      if (n.endsWith('.html')) return { icon: '#icon-file', color: '#3b82f6', bg: '#dbeafe' };
-      if (/\.(jpg|png|svg)$/.test(n)) return { icon: '#icon-file', color: '#a855f7', bg: '#f3e8ff' };
-      return { icon: '#icon-file', color: '#64748b', bg: '#f1f5f9' };
+        if (isFolder) return { icon: '#icon-folder', color: '#f59e0b', bg: '#fef3c7' };
+        const n = (name || '').toLowerCase();
+        if (n.endsWith('.pdf')) return { icon: '#icon-file', color: '#ef4444', bg: '#fee2e2' };
+        if (n.endsWith('.html')) return { icon: '#icon-file', color: '#3b82f6', bg: '#dbeafe' };
+        if (/\.(jpg|png|svg)$/.test(n)) return { icon: '#icon-file', color: '#a855f7', bg: '#f3e8ff' };
+        return { icon: '#icon-file', color: '#64748b', bg: '#f1f5f9' };
     }
 
     function renderSidebar(nodes, container = document.getElementById('tree-container'), level = 0) {
-      if (level === 0) container.innerHTML = '';
-      nodes.forEach(node => {
-        const isFolder = node.children && node.children.length > 0;
-        const title = node.title || node.name;
-        const path = node.path || node.url;
-
-        const item = document.createElement('div');
-        item.className = 'tree-node';
-
-        const content = document.createElement('div');
-        content.className = 'node-content';
-        content.style.paddingLeft = `${12 + level * 16}px`;
-        content.innerHTML = `
-          <svg class="svg-icon" style="color:${isFolder ? '#f59e0b' : '#64748b'}; margin-right:8px;"><use href="${isFolder ? '#icon-folder' : '#icon-file'}"></use></svg>
-          <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>
-          ${isFolder ? `<span class="arrow">▶</span>` : ''}
-        `;
-
-        content.onclick = () => {
-          if (isFolder) {
-            const arrow = content.querySelector('.arrow');
-            const sub = item.querySelector('.sub-group');
-            if (sub.innerHTML === '') renderSidebar(node.children, sub, level + 1);
-            sub.classList.toggle('show');
-            arrow.style.transform = sub.classList.contains('show') ? 'rotate(90deg)' : 'rotate(0deg)';
-          } else {
-            openFile(path, title);
-            if (window.innerWidth <= 768) toggleSidebar();
-          }
-        };
-
-        item.appendChild(content);
-
-        if (isFolder) {
-          const sub = document.createElement('div');
-          sub.className = 'sub-group';
-          item.appendChild(sub);
-        }
-
-        container.appendChild(item);
-      });
+        if (level === 0) container.innerHTML = '';
+        nodes.forEach(node => {
+            const isFolder = node.children && node.children.length > 0;
+            const title = node.title || node.name;
+            const path = node.path || node.url;
+            const item = document.createElement('div');
+            item.className = 'tree-node';
+            
+            const content = document.createElement('div');
+            content.className = 'node-content';
+            content.style.paddingLeft = `${12 + level * 16}px`;
+            content.innerHTML = `
+                <svg class="svg-icon" style="color:${isFolder ? '#f59e0b' : '#64748b'}; margin-right:8px;"><use href="${isFolder ? '#icon-folder' : '#icon-file'}"></use></svg>
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>
+                ${isFolder ? `<span class="arrow">▶</span>` : ''}
+            `;
+            content.onclick = () => {
+                if (isFolder) {
+                    const arrow = content.querySelector('.arrow');
+                    const sub = item.querySelector('.sub-group');
+                    if(sub.innerHTML === '') renderSidebar(node.children, sub, level + 1);
+                    sub.classList.toggle('show');
+                    arrow.style.transform = sub.classList.contains('show') ? 'rotate(90deg)' : 'rotate(0deg)';
+                } else {
+                    openFile(path, title);
+                    if(window.innerWidth <= 768) toggleSidebar();
+                }
+            };
+            item.appendChild(content);
+            if (isFolder) {
+                const sub = document.createElement('div');
+                sub.className = 'sub-group';
+                item.appendChild(sub);
+            }
+            container.appendChild(item);
+        });
     }
 
     function renderGrid(nodes) {
-      const grid = document.getElementById('grid-view');
-      grid.innerHTML = '';
-      currentMode = 'grid';
-      switchView('grid-view');
+        const grid = document.getElementById('grid-view');
+        grid.innerHTML = '';
+        currentMode = 'grid';
+        switchView('grid-view');
+        
+        const isRoot = historyStack.length === 0;
+        document.getElementById('page-title').innerText = isRoot ? '知识库首页' : '文件夹';
+        document.getElementById('back-btn').style.display = isRoot ? 'none' : 'flex';
+        
+        if (!isRoot) grid.classList.add('list-mode'); else grid.classList.remove('list-mode');
 
-      const isRoot = historyStack.length === 0;
-      document.getElementById('page-title').innerText = isRoot ? '知识库首页' : '文件夹';
-      document.getElementById('back-btn').style.display = isRoot ? 'none' : 'flex';
-
-      if (!isRoot) grid.classList.add('list-mode');
-      else grid.classList.remove('list-mode');
-
-      nodes.forEach(node => {
-        const isFolder = node.children && node.children.length > 0;
-        const title = node.title || node.name;
-        const path = node.path || node.url;
-        const style = getTypeStyle(path, isFolder);
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.onclick = () => {
-          if (isFolder) enterFolder(nodes, node.children);
-          else openFile(path, title);
-        };
-
-        const meta = isFolder ? `${node.children.length} 项` : (path ? path.split('.').pop().toUpperCase() : 'FILE');
-        card.innerHTML = `
-          <div class="card-icon-box" style="background:${style.bg}; color:${style.color}">
-            <svg class="svg-icon" style="width:50%; height:50%"><use href="${style.icon}"></use></svg>
-          </div>
-          <div class="card-title">${title}</div>
-          <div class="card-meta">${meta}</div>
-        `;
-        grid.appendChild(card);
-      });
+        nodes.forEach(node => {
+            const isFolder = node.children && node.children.length > 0;
+            const title = node.title || node.name;
+            const path = node.path || node.url;
+            const style = getTypeStyle(path, isFolder);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => {
+                if (isFolder) enterFolder(nodes, node.children);
+                else openFile(path, title);
+            };
+            const meta = isFolder ? `${node.children.length} 项` : (path ? path.split('.').pop().toUpperCase() : 'FILE');
+            card.innerHTML = `
+                <div class="card-icon-box" style="background:${style.bg}; color:${style.color}">
+                    <svg class="svg-icon" style="width:50%; height:50%"><use href="${style.icon}"></use></svg>
+                </div>
+                <div class="card-title">${title}</div>
+                <div class="card-meta">${meta}</div>
+            `;
+            grid.appendChild(card);
+        });
     }
 
     function enterFolder(parent, children) {
-      navPush({ mode: 'folder' }, '#folder');
-      historyStack.push(parent);
-      renderGrid(children);
+        window.location.hash = "#folder";
+        historyStack.push(parent);
+        renderGrid(children);
     }
 
     function openFile(path, title) {
-      if (!path) return;
-      navPush({ mode: 'reader' }, '#reader');
+        if (!path) return;
+        window.location.hash = "#reader";
+        currentMode = 'reader';
+        document.getElementById('page-title').innerText = title;
+        document.getElementById('back-btn').style.display = 'flex';
+        
+        let finalPath = encodePath(path);
+        if (useOnline) finalPath = CDN_ROOT + finalPath;
 
-      currentMode = 'reader';
-      document.getElementById('page-title').innerText = title;
-      document.getElementById('back-btn').style.display = 'flex';
-
-      let finalPath = encodePath(path);
-      if (useOnline) finalPath = CDN_ROOT + finalPath;
-
-      if (path.toLowerCase().endsWith('.pdf')) renderPdf(finalPath);
-      else renderHtml(finalPath);
+        if (path.toLowerCase().endsWith('.pdf')) renderPdf(finalPath);
+        else renderHtml(finalPath);
     }
 
     async function renderHtml(url) {
-      currentMode = 'html';
-      switchView('html-view');
+        currentMode = 'html';
+        switchView('html-view');
+        const container = document.getElementById('html-content');
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#999">加载中...</div>';
 
-      const container = document.getElementById('html-content');
-      container.innerHTML = '<div style="text-align:center;padding:20px;color:#999">加载中...</div>';
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("加载失败");
+            let html = await res.text();
+            
+            const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+            const isAbs = (v) => /^(https?:|data:|#|mailto:|tel:)/i.test(v);
+            const toAbsUrl = (v) => { try { return new URL(v, baseUrl).href; } catch { return v; } };
+            const replaceFn = (m, attr, val) => {
+                if (!isAbs(val)) return `${attr}="${toAbsUrl(val)}"`;
+                return m;
+            };
 
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("加载失败");
-        let html = await res.text();
+            html = html.replace(/(src)="([^"]+)"/g, replaceFn);
+            html = html.replace(/(href)="([^"]+)"/g, replaceFn);
+            html = html.replace(/(src)='([^']+)'/g, (m,a,v)=>replaceFn(m,a,v));
+            html = html.replace(/(href)='([^']+)'/g, (m,a,v)=>replaceFn(m,a,v));
 
-        const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-        const isAbs = (v) => /^(https?:|data:|#|mailto:|tel:)/i.test(v);
-        const toAbsUrl = (v) => { try { return new URL(v, baseUrl).href; } catch { return v; } };
-        const replaceFn = (m, attr, val) => (!isAbs(val) ? `${attr}="${toAbsUrl(val)}"` : m);
-
-        html = html.replace(/(src)="([^"]+)"/g, replaceFn);
-        html = html.replace(/(href)="([^"]+)"/g, replaceFn);
-        html = html.replace(/(src)='([^']+)'/g, (m, a, v) => replaceFn(m, a, v));
-        html = html.replace(/(href)='([^']+)'/g, (m, a, v) => replaceFn(m, a, v));
-
-        container.innerHTML = html;
-        if (window.MathJax) MathJax.typesetPromise([container]);
-      } catch (e) {
-        container.innerHTML = `<div style="color:red;text-align:center;padding:20px">${e.message}</div>`;
-      }
-    }
-
-    // =========================
-    // PDF：不重复下载 + pinch 缩放 + 按钮缩放
-    // =========================
-    function clearPdfViewOnly() {
-      if (pdfIntersectionObserver) { pdfIntersectionObserver.disconnect(); pdfIntersectionObserver = null; }
-      const c = document.getElementById('pdf-container');
-      if (c) {
-        c.innerHTML = '';
-        c.style.transform = '';
-        c.style.transformOrigin = '';
-      }
-    }
-
-    function destroyPdfAll() {
-      clearPdfViewOnly();
-      if (pdfLoadingTask) { try { pdfLoadingTask.destroy(); } catch { } pdfLoadingTask = null; }
-      if (currentPdfDoc) { try { currentPdfDoc.destroy(); } catch { } currentPdfDoc = null; }
-      currentPdfUrl = '';
-    }
-
-    async function renderPdf(url) {
-      currentMode = 'pdf';
-      switchView('pdf-view');
-      document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-
-      if (currentPdfDoc && currentPdfUrl === url) {
-        const mySeqSame = ++pdfRenderSeq;
-        clearPdfViewOnly();
-        await buildPdfLayout(currentPdfDoc, mySeqSame);
-        return;
-      }
-
-      destroyPdfAll();
-
-      const mySeq = ++pdfRenderSeq;
-      currentPdfUrl = url;
-
-      const loading = document.getElementById('loading');
-      loading.style.display = 'flex';
-      document.getElementById('loading-text').innerText = '加载中...';
-
-      try {
-        pdfLoadingTask = pdfjsLib.getDocument(url);
-        pdfLoadingTask.onProgress = (p) => {
-          if (mySeq !== pdfRenderSeq) return;
-          const percent = Math.round((p.loaded / p.total) * 100);
-          if (!isNaN(percent)) document.getElementById('loading-text').innerText = `加载 ${percent}%`;
-        };
-
-        const pdf = await pdfLoadingTask.promise;
-        if (mySeq !== pdfRenderSeq) return;
-
-        currentPdfDoc = pdf;
-        document.getElementById('loading-text').innerText = '渲染中...';
-
-        await buildPdfLayout(pdf, mySeq);
-        loading.style.display = 'none';
-      } catch (e) {
-        if (mySeq === pdfRenderSeq) {
-          loading.style.display = 'none';
-          alert("无法打开 PDF: " + e.message);
+            container.innerHTML = html;
+            if (window.MathJax) MathJax.typesetPromise([container]);
+        } catch (e) {
+            container.innerHTML = `<div style="color:red;text-align:center;padding:20px">${e.message}</div>`;
         }
-      }
+    }
+
+    // === PDF 逻辑 (Pinch/Button Zoom + 懒加载) ===
+    async function renderPdf(url) {
+        currentMode = 'pdf';
+        switchView('pdf-view');
+        document.getElementById('reader-tools').style.display = 'flex';
+        document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
+        
+        cleanupPdf(); 
+        
+        const mySeq = ++pdfRenderSeq;
+        currentPdfUrl = url;
+
+        const container = document.getElementById('pdf-container');
+        const loading = document.getElementById('loading');
+        loading.style.display = 'flex';
+        document.getElementById('loading-text').innerText = '加载中...';
+
+        try {
+            pdfLoadingTask = pdfjsLib.getDocument(url);
+            pdfLoadingTask.onProgress = (p) => {
+                if (mySeq !== pdfRenderSeq) return;
+                const percent = Math.round((p.loaded / p.total) * 100);
+                if (!isNaN(percent)) document.getElementById('loading-text').innerText = `加载 ${percent}%`;
+            };
+
+            const pdf = await pdfLoadingTask.promise;
+            if (mySeq !== pdfRenderSeq) return; 
+            
+            currentPdfDoc = pdf;
+            document.getElementById('loading-text').innerText = '渲染中...';
+
+            await buildPdfLayout(pdf, mySeq);
+            loading.style.display = 'none';
+
+        } catch (e) {
+            if (mySeq === pdfRenderSeq) {
+                loading.style.display = 'none';
+                alert("无法打开 PDF: " + e.message);
+            }
+        }
     }
 
     async function buildPdfLayout(pdf, seq) {
-      const container = document.getElementById('pdf-container');
-      const scrollEl = document.getElementById('pdf-scroll');
-      const clientW = scrollEl.clientWidth - 40;
+        const container = document.getElementById('pdf-container');
+        const scrollEl = document.getElementById('pdf-scroll');
+        const clientW = scrollEl.clientWidth - 40;
 
-      const firstPage = await pdf.getPage(1);
-      if (seq !== pdfRenderSeq) return;
+        const firstPage = await pdf.getPage(1);
+        if (seq !== pdfRenderSeq) return;
 
-      const firstVp = firstPage.getViewport({ scale: 1 });
-      const pageAspect = firstVp.height / firstVp.width;
+        const firstVp = firstPage.getViewport({ scale: 1 });
+        const pageAspect = firstVp.height / firstVp.width; 
 
-      pdfIntersectionObserver = new IntersectionObserver((entries) => {
-        if (seq !== pdfRenderSeq || currentMode !== 'pdf') return;
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const div = entry.target;
-            if (!div.dataset.loaded) {
-              renderPageInDiv(pdf, parseInt(div.dataset.page, 10), div, seq);
-              div.dataset.loaded = 'true';
-            }
-          }
-        });
-      }, { root: scrollEl, rootMargin: '500px' });
+        pdfIntersectionObserver = new IntersectionObserver((entries) => {
+            if (seq !== pdfRenderSeq || currentMode !== 'pdf') return;
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const div = entry.target;
+                    if (!div.dataset.loaded) {
+                        renderPageInDiv(pdf, parseInt(div.dataset.page), div, seq);
+                        div.dataset.loaded = 'true';
+                    }
+                }
+            });
+        }, { root: scrollEl, rootMargin: '500px' });
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const div = document.createElement('div');
-        div.className = 'pdf-page-container';
-        div.dataset.page = i;
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const div = document.createElement('div');
+            div.className = 'pdf-page-container';
+            div.dataset.page = i;
+            div.style.width = (clientW * currentScale) + 'px';
+            div.style.height = (clientW * pageAspect * currentScale) + 'px'; 
+            container.appendChild(div);
+            pdfIntersectionObserver.observe(div);
+        }
 
-        div.style.width = (clientW * currentScale) + 'px';
-        div.style.height = (clientW * pageAspect * currentScale) + 'px';
-
-        container.appendChild(div);
-        pdfIntersectionObserver.observe(div);
-      }
-
-      if (pendingPdfScroll) {
-        scrollEl.scrollTop = pendingPdfScroll.top;
-        scrollEl.scrollLeft = pendingPdfScroll.left;
-        pendingPdfScroll = null;
-      }
+        if (pendingPdfScroll) {
+            scrollEl.scrollTop = pendingPdfScroll.top;
+            scrollEl.scrollLeft = pendingPdfScroll.left;
+            pendingPdfScroll = null;
+        }
     }
 
     async function renderPageInDiv(pdf, num, div, seq) {
-      if (seq !== pdfRenderSeq) return;
-      try {
-        const page = await pdf.getPage(num);
-        const scrollEl = document.getElementById('pdf-scroll');
-        const containerW = div.clientWidth || (scrollEl.clientWidth - 40) || 300;
+        if (seq !== pdfRenderSeq) return;
+        try {
+            const page = await pdf.getPage(num);
+            const scrollEl = document.getElementById('pdf-scroll');
+            const containerW = div.clientWidth || (scrollEl.clientWidth - 40) || 300;
 
-        const baseVp = page.getViewport({ scale: 1 });
-        const fitScale = containerW / baseVp.width;
+            const baseVp = page.getViewport({ scale: 1 });
+            const fitScale = containerW / baseVp.width; 
+            
+            const dpr = Math.max(window.devicePixelRatio || 1, RENDER_QUALITY); 
+            const outputScale = fitScale * dpr;
 
-        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-        const cssViewport = page.getViewport({ scale: fitScale });
-        const renderViewport = page.getViewport({ scale: fitScale * dpr });
+            const viewport = page.getViewport({ scale: fitScale });
 
-        const canvas = document.createElement('canvas');
-        canvas.className = 'pdf-page-canvas';
-        const ctx = canvas.getContext('2d');
+            const canvas = document.createElement('canvas');
+            canvas.className = 'pdf-page-canvas';
+            const ctx = canvas.getContext('2d');
 
-        canvas.width = Math.floor(renderViewport.width);
-        canvas.height = Math.floor(renderViewport.height);
-        canvas.style.width = `${cssViewport.width}px`;
-        canvas.style.height = `${cssViewport.height}px`;
+            canvas.width = Math.floor(baseVp.width * outputScale);
+            canvas.height = Math.floor(baseVp.height * outputScale);
+            canvas.style.width = `${viewport.width}px`;
+            canvas.style.height = `${viewport.height}px`;
 
-        div.innerHTML = '';
-        div.style.height = '';
-        div.appendChild(canvas);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            
+            div.innerHTML = '';
+            div.style.height = ''; 
+            div.appendChild(canvas);
+            
+            // 重算渲染视口 (匹配outputScale)
+            const renderViewport = page.getViewport({ scale: outputScale });
+            // 重置 transform
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-        await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
-      } catch (e) {}
+            await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+        } catch(e) {}
     }
 
-    function rebuildPdfLayoutKeepDoc() {
-      if (!currentPdfDoc || currentMode !== 'pdf') return;
-      const mySeq = ++pdfRenderSeq;
-      clearPdfViewOnly();
-      buildPdfLayout(currentPdfDoc, mySeq);
-    }
-
-    function setPdfScale(newScale, keepCenter = true) {
-      if (!currentPdfDoc || currentMode !== 'pdf') return;
-      newScale = Math.max(0.5, Math.min(4.0, newScale));
-      if (Math.abs(newScale - currentScale) < 1e-6) return;
-
-      const scrollEl = document.getElementById('pdf-scroll');
-      const rect = scrollEl.getBoundingClientRect();
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-      const anchorX = cx + scrollEl.scrollLeft;
-      const anchorY = cy + scrollEl.scrollTop;
-
-      const ratio = newScale / currentScale;
-
-      if (keepCenter) {
-        pendingPdfScroll = {
-          left: (anchorX * ratio) - cx,
-          top: (anchorY * ratio) - cy
-        };
-      }
-
-      currentScale = newScale;
-      document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-      rebuildPdfLayoutKeepDoc();
-    }
-
-    window.zoomPdf = function(delta) {
-      setPdfScale(currentScale + delta, true);
-    };
-
-    // =========================
-    // 关键：手势（PointerEvent + TouchEvent 兜底）
-    // =========================
+    // === Pinch 手势 ===
     function setupPdfGestures() {
-      const scrollEl = document.getElementById('pdf-scroll');
-      if (!scrollEl) return;
+        const scrollEl = document.getElementById('pdf-scroll');
+        if (!scrollEl) return;
+        if (!('PointerEvent' in window)) return;
 
-      // ---------- 公共工具 ----------
-      function log(...args) { if (DEBUG_PINCH) console.log('[PINCH]', ...args); }
+        const pointers = new Map();
+        let isPinching = false;
 
-      function applyPreview(newScale) {
+        scrollEl.addEventListener('pointerdown', (e) => {
+            if (currentMode !== 'pdf' || !currentPdfDoc) return;
+            if (e.pointerType !== 'touch') return;
+            pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            try { scrollEl.setPointerCapture(e.pointerId); } catch {}
+            if (pointers.size === 2) {
+                isPinching = true;
+                const [p1, p2] = [...pointers.values()];
+                const rect = scrollEl.getBoundingClientRect();
+                const centerX = (p1.x + p2.x) / 2 - rect.left;
+                const centerY = (p1.y + p2.y) / 2 - rect.top;
+                
+                pinchState = {
+                    startDist: Math.hypot(p1.x - p2.x, p1.y - p2.y),
+                    startScale: currentScale,
+                    startScrollTop: scrollEl.scrollTop,
+                    startScrollLeft: scrollEl.scrollLeft,
+                    anchorX: centerX + scrollEl.scrollLeft,
+                    anchorY: centerY + scrollEl.scrollTop,
+                    clientCenterX: centerX,
+                    clientCenterY: centerY,
+                    lastScale: currentScale
+                };
+            }
+        }, { passive: true });
+
+        scrollEl.addEventListener('pointermove', (e) => {
+            if (!pointers.has(e.pointerId)) return;
+            pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (!isPinching || !pinchState || pointers.size !== 2) return;
+
+            const [p1, p2] = [...pointers.values()];
+            const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+            if (pinchState.startDist < 1) return;
+
+            const nextScale = Math.max(0.5, Math.min(4.0, pinchState.startScale * (dist / pinchState.startDist)));
+            
+            if (!pinchRaf) {
+                pinchRaf = requestAnimationFrame(() => {
+                    applyPreview(nextScale);
+                    pinchRaf = 0;
+                });
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        function endPointer(e) {
+            if (pointers.has(e.pointerId)) pointers.delete(e.pointerId);
+            if (isPinching && pointers.size < 2) {
+                commitPinch();
+                isPinching = false;
+            }
+        }
+        scrollEl.addEventListener('pointerup', endPointer, { passive: true });
+        scrollEl.addEventListener('pointercancel', endPointer, { passive: true });
+    }
+
+    function applyPreview(newScale) {
         const container = document.getElementById('pdf-container');
+        const scrollEl = document.getElementById('pdf-scroll');
         const ratio = newScale / pinchState.startScale;
 
         container.style.transformOrigin = '0 0';
@@ -692,227 +703,152 @@
 
         pinchState.lastScale = newScale;
         document.getElementById('zoom-val').innerText = Math.round(newScale * 100) + '%';
-      }
-
-      function commitPinch() {
-        if (!pinchState) return;
-
-        const finalScale = Math.max(0.5, Math.min(4.0, pinchState.lastScale || currentScale));
-        const ratio = finalScale / pinchState.startScale;
-
-        pendingPdfScroll = {
-          top: (pinchState.anchorY * ratio) - pinchState.clientCenterY,
-          left: (pinchState.anchorX * ratio) - pinchState.clientCenterX
-        };
-
-        const container = document.getElementById('pdf-container');
-        container.style.transform = '';
-        container.style.transformOrigin = '';
-
-        // pinch 结束后恢复允许滚动
-        scrollEl.style.touchAction = 'pan-x pan-y';
-
-        currentScale = finalScale;
-        document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-
-        pinchState = null;
-        rebuildPdfLayoutKeepDoc();
-      }
-
-      // ---------- 1) PointerEvent 实现 ----------
-      if ('PointerEvent' in window) {
-        const pointers = new Map();
-        let isPinching = false;
-
-        function startPinchIfReady() {
-          if (pointers.size !== 2) return;
-          if (currentMode !== 'pdf' || !currentPdfDoc) return;
-
-          const [p1, p2] = [...pointers.values()];
-          const rect = scrollEl.getBoundingClientRect();
-          const centerX = (p1.x + p2.x) / 2 - rect.left;
-          const centerY = (p1.y + p2.y) / 2 - rect.top;
-
-          pinchState = {
-            startDist: Math.hypot(p1.x - p2.x, p1.y - p2.y),
-            startScale: currentScale,
-            anchorX: centerX + scrollEl.scrollLeft,
-            anchorY: centerY + scrollEl.scrollTop,
-            clientCenterX: centerX,
-            clientCenterY: centerY,
-            lastScale: currentScale
-          };
-
-          // pinch 期间禁用滚动默认行为（更稳）
-          scrollEl.style.touchAction = 'none';
-
-          isPinching = true;
-          log('Pointer pinch start', pinchState.startDist);
-        }
-
-        scrollEl.addEventListener('pointerdown', (e) => {
-          if (e.pointerType !== 'touch') return;
-          pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-          try { scrollEl.setPointerCapture(e.pointerId); } catch {}
-          if (pointers.size === 2) startPinchIfReady();
-        }, { passive: true });
-
-        scrollEl.addEventListener('pointermove', (e) => {
-          if (!pointers.has(e.pointerId)) return;
-          pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-          if (!isPinching || !pinchState || pointers.size !== 2) return;
-
-          const [p1, p2] = [...pointers.values()];
-          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          if (pinchState.startDist < 1) return;
-
-          const nextScale = Math.max(0.5, Math.min(4.0, pinchState.startScale * (dist / pinchState.startDist)));
-
-          if (!pinchRaf) {
-            pinchRaf = requestAnimationFrame(() => {
-              applyPreview(nextScale);
-              pinchRaf = 0;
-            });
-          }
-
-          // ✅ 只在 pinch 中阻止默认
-          e.preventDefault();
-        }, { passive: false });
-
-        function endPointer(e) {
-          if (pointers.has(e.pointerId)) pointers.delete(e.pointerId);
-          if (isPinching && pointers.size < 2) {
-            isPinching = false;
-            commitPinch();
-          }
-        }
-
-        scrollEl.addEventListener('pointerup', endPointer, { passive: true });
-        scrollEl.addEventListener('pointercancel', endPointer, { passive: true });
-      }
-
-      // ---------- 2) TouchEvent 兜底（iOS / WKWebView 最稳） ----------
-      let touchPinching = false;
-
-      function getTouchDist(t1, t2) {
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        return Math.hypot(dx, dy);
-      }
-
-      scrollEl.addEventListener('touchstart', (e) => {
-        if (currentMode !== 'pdf' || !currentPdfDoc) return;
-        if (!e.touches || e.touches.length !== 2) return;
-
-        const rect = scrollEl.getBoundingClientRect();
-        const t1 = e.touches[0], t2 = e.touches[1];
-        const centerX = (t1.clientX + t2.clientX) / 2 - rect.left;
-        const centerY = (t1.clientY + t2.clientY) / 2 - rect.top;
-
-        pinchState = {
-          startDist: getTouchDist(t1, t2),
-          startScale: currentScale,
-          anchorX: centerX + scrollEl.scrollLeft,
-          anchorY: centerY + scrollEl.scrollTop,
-          clientCenterX: centerX,
-          clientCenterY: centerY,
-          lastScale: currentScale
-        };
-
-        touchPinching = true;
-
-        // pinch 期间禁用滚动/系统手势
-        scrollEl.style.touchAction = 'none';
-
-        log('Touch pinch start', pinchState.startDist);
-
-        // ✅ 两指开始时就阻止默认（否则某些 iOS 会乱抢）
-        e.preventDefault();
-      }, { passive: false });
-
-      scrollEl.addEventListener('touchmove', (e) => {
-        if (!touchPinching || !pinchState) return;
-        if (!e.touches || e.touches.length !== 2) return;
-
-        const t1 = e.touches[0], t2 = e.touches[1];
-        const dist = getTouchDist(t1, t2);
-        if (pinchState.startDist < 1) return;
-
-        const nextScale = Math.max(0.5, Math.min(4.0, pinchState.startScale * (dist / pinchState.startDist)));
-
-        if (!pinchRaf) {
-          pinchRaf = requestAnimationFrame(() => {
-            applyPreview(nextScale);
-            pinchRaf = 0;
-          });
-        }
-
-        // ✅ pinch 过程中一定要 preventDefault
-        e.preventDefault();
-      }, { passive: false });
-
-      function endTouch(e) {
-        if (!touchPinching) return;
-        const stillTwo = e.touches && e.touches.length === 2;
-        if (stillTwo) return;
-
-        touchPinching = false;
-        commitPinch();
-      }
-
-      scrollEl.addEventListener('touchend', endTouch, { passive: true });
-      scrollEl.addEventListener('touchcancel', endTouch, { passive: true });
     }
 
-    // =========================
-    // 关闭阅读器
-    // =========================
-    function closeReader() {
-      currentMode = 'grid';
-      switchView('grid-view');
+    function commitPinch() {
+        if (!pinchState) return;
+        commitZoomTo(pinchState.lastScale, pinchState);
+    }
 
-      pdfRenderSeq++;
-      destroyPdfAll();
+    function commitZoomTo(nextScale, state) {
+        const container = document.getElementById('pdf-container');
+        const scrollEl = document.getElementById('pdf-scroll');
+        
+        const finalScale = Math.max(0.5, Math.min(4.0, nextScale || currentScale));
+        const ratio = finalScale / state.startScale;
+        
+        pendingPdfScroll = { 
+            top: (state.anchorY * ratio) - state.clientCenterY, 
+            left: (state.anchorX * ratio) - state.clientCenterX
+        };
 
-      document.getElementById('html-content').innerHTML = '';
-      document.getElementById('page-title').innerText = historyStack.length > 0 ? '文件夹' : '知识库首页';
-      if (historyStack.length === 0) document.getElementById('back-btn').style.display = 'none';
+        container.style.transform = '';
+        container.style.transformOrigin = '';
+        
+        currentScale = finalScale;
+        document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
+        
+        pinchState = null;
+        
+        cleanupPdf(); 
+        rebuildPdfLayout();
+    }
+
+    function rebuildPdfLayout() {
+        if (!currentPdfDoc || !currentPdfUrl) return;
+        const mySeq = ++pdfRenderSeq;
+        clearPdfViewOnly();
+        buildPdfLayout(currentPdfDoc, mySeq);
+    }
+
+    function clearPdfViewOnly() {
+        if (pdfIntersectionObserver) { pdfIntersectionObserver.disconnect(); pdfIntersectionObserver = null; }
+        const c = document.getElementById('pdf-container');
+        if (c) {
+            c.innerHTML = '';
+            c.style.transform = '';
+        }
+    }
+
+    function cleanupPdf() {
+        clearPdfViewOnly();
+        if (pdfLoadingTask) { try { pdfLoadingTask.destroy(); } catch {} pdfLoadingTask = null; }
+        if (currentPdfDoc) { try { currentPdfDoc.destroy(); } catch {} currentPdfDoc = null; }
+    }
+
+    function closeReader(isSystemBack) {
+        currentMode = 'grid';
+        switchView('grid-view');
+        
+        pdfRenderSeq++; 
+        cleanupPdf();
+        
+        document.getElementById('html-content').innerHTML = '';
+        document.getElementById('page-title').innerText = historyStack.length > 0 ? '文件夹' : '知识库首页';
+        if (historyStack.length === 0) document.getElementById('back-btn').style.display = 'none';
+    }
+
+    // 🟢 按钮缩放
+    window.zoomPdf = function(delta) {
+        const newScale = Math.max(0.5, Math.min(4.0, currentScale + delta));
+        
+        const scrollEl = document.getElementById('pdf-scroll');
+        const rect = scrollEl.getBoundingClientRect();
+        
+        // 模拟中心缩放
+        const pinchSim = {
+             startScale: currentScale,
+             startScrollTop: scrollEl.scrollTop,
+             startScrollLeft: scrollEl.scrollLeft,
+             anchorX: rect.width/2 + scrollEl.scrollLeft,
+             anchorY: rect.height/2 + scrollEl.scrollTop,
+             clientCenterX: rect.width/2,
+             clientCenterY: rect.height/2
+        };
+        commitZoomTo(newScale, pinchSim);
     }
 
     function switchView(id) {
-      ['grid-view', 'html-view', 'pdf-view'].forEach(v => {
-        const el = document.getElementById(v);
-        if (v !== id) { el.style.display = 'none'; return; }
-        el.style.display = (v === 'grid-view') ? '' : 'flex';
-      });
-
-      document.getElementById('reader-tools').style.display = (id === 'pdf-view') ? 'flex' : 'none';
-
-      const fab = document.getElementById('fab-menu');
-      if (id === 'grid-view') fab.classList.add('visible');
-      else fab.classList.remove('visible');
+        ['grid-view', 'html-view', 'pdf-view'].forEach(v => {
+            const el = document.getElementById(v);
+            if (v !== id) {
+                el.style.display = 'none';
+                return;
+            }
+            if (v === 'grid-view') {
+                el.style.display = ''; 
+            } else {
+                el.style.display = 'flex';
+            }
+        });
+        
+        document.getElementById('reader-tools').style.display = (id === 'pdf-view') ? 'flex' : 'none';
+        const fab = document.getElementById('fab-menu');
+        if (id === 'grid-view') fab.classList.add('visible'); else fab.classList.remove('visible');
     }
 
-    window.toggleSidebar = function () {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('overlay');
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('show');
+    window.toggleSidebar = function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
     }
 
     function showToast() {
-      const t = document.getElementById('toast');
-      t.style.display = 'block';
-      setTimeout(() => t.style.display = 'none', 2000);
+        const t = document.getElementById('toast');
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
     }
 
     function updateBadge(status, ver) {
-      const el = document.getElementById('version-badge');
-      const text = (status === 'NEW' || status === 'LATEST') ? 'ONLINE' : 'OFFLINE';
-      el.innerText = `${text} v${(ver || '').toString().slice(-4)}`;
-      el.className = `version-badge ${(status === 'NEW' || status === 'LATEST') ? 'online' : ''}`;
+        const el = document.getElementById('version-badge');
+        let text = status === 'NEW' || status === 'LATEST' ? 'ONLINE' : 'OFFLINE';
+        el.innerText = `${text} v${(ver||'').toString().slice(-4)}`;
+        el.className = `version-badge ${status === 'NEW' || status === 'LATEST' ? 'online' : ''}`;
     }
+
+    // 🟢 内容区手势监听 (辅助返回)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const gestureArea = document.getElementById('main-area');
+
+    gestureArea.addEventListener('touchstart', e => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, {passive: true});
+
+    gestureArea.addEventListener('touchend', e => {
+        const diffX = e.changedTouches[0].clientX - touchStartX;
+        const diffY = Math.abs(e.changedTouches[0].clientY - touchStartY);
+        const startX = touchStartX;
+
+        // 逻辑：startX > 20 避开边缘，交给系统；中间右滑触发 JS 返回
+        if (startX > 20 && diffX > 80 && diffY < 50) {
+            if (currentMode !== 'grid' || historyStack.length > 0) {
+                goBack();
+            }
+        }
+    }, {passive: true});
 
     initApp();
   </script>
