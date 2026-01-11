@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Jwc 知识库</title>
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#ffffff">
 
-  <!-- PWA / WebApp（可选，但不影响缩放/返回逻辑） -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
+  <!-- ✅ PWA meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Jwc 知识库">
 
   <script src="lib/pdfjs/pdf.min.js"></script>
-  <script id="MathJax-script" async
-          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
     :root {
@@ -46,23 +46,13 @@
 
     /* 侧边栏 */
     #sidebar {
-      width: var(--sidebar-width);
-      height: 100%;
-      background: var(--sidebar-bg);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      z-index: 50;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      width: var(--sidebar-width); height: 100%; background: var(--sidebar-bg);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      flex-shrink: 0; z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .sidebar-header {
-      height: var(--header-height);
-      padding: 0 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
+      height: var(--header-height); padding: 0 20px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid var(--border);
     }
     .app-logo { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
     .version-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #64748b; font-weight: 500; }
@@ -70,14 +60,8 @@
     #tree-container { flex: 1; overflow-y: auto; padding: 10px; }
 
     .node-content {
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      font-size: 14px;
-      margin-bottom: 2px;
-      transition: background 0.1s;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center;
+      font-size: 14px; margin-bottom: 2px; transition: background 0.1s;
     }
     .node-content:active { background: #e2e8f0; }
     .arrow { margin-left: auto; font-size: 10px; color: #cbd5e1; transition: transform 0.2s; }
@@ -85,41 +69,18 @@
     .sub-group.show { display: block; }
 
     /* 主区域 */
-    #main-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      overscroll-behavior-x: none; /* 你提到的 iOS 更严格阻止（可选） */
-    }
+    #main-area { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; width: 100%; }
 
     #top-bar {
-      height: var(--header-height);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 12px;
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(8px);
-      z-index: 40;
-      flex-shrink: 0;
+      height: var(--header-height); border-bottom: 1px solid var(--border); display: flex;
+      align-items: center; justify-content: space-between; padding: 0 12px;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 40; flex-shrink: 0;
     }
     .bar-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
     .page-title { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 4px; }
     .tool-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: var(--text-light);
+      width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-light);
     }
     .tool-btn:active { background: #f1f5f9; color: var(--primary); }
 
@@ -127,54 +88,27 @@
 
     /* 网格视图 */
     #grid-view {
-      position: absolute;
-      inset: 0;
-      overflow-y: auto;
-      padding: 20px;
-      display: grid;
-      gap: 16px;
-      align-content: start;
+      position: absolute; inset: 0; overflow-y: auto; padding: 20px;
+      display: grid; gap: 16px; align-content: start;
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       background: #fafafa;
     }
     #grid-view.list-mode { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 
     .card {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; transition: all 0.2s; position: relative;
       box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
     .card:active { transform: scale(0.98); background: #f8fafc; }
 
     .card-icon-box {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 12px;
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
     }
     .card-icon-box svg { width: 28px; height: 28px; }
-    .card-title {
-      font-size: 14px;
-      font-weight: 600;
-      text-align: center;
-      line-height: 1.4;
-      color: var(--text-main);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
+    .card-title { font-size: 14px; font-weight: 600; text-align: center; line-height: 1.4; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .card-meta { font-size: 11px; color: var(--text-light); margin-top: 6px; background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
 
     #grid-view.list-mode .card { flex-direction: row; padding: 12px 16px; align-items: center; min-height: auto; }
@@ -188,13 +122,8 @@
 
     /* HTML 内容容器 */
     #html-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      -webkit-overflow-scrolling: touch;
-      max-width: 800px;
-      margin: 0 auto;
-      width: 100%;
+      flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch;
+      max-width: 800px; margin: 0 auto; width: 100%;
     }
     #html-content img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     #html-content table { border-collapse: collapse; width: 100%; margin: 10px 0; overflow-x: auto; display: block; }
@@ -205,69 +134,34 @@
     /* PDF 容器 */
     #pdf-view { background: #525659; }
     #pdf-scroll {
-      flex: 1;
-      overflow: auto;
-      padding: 20px 0;
-      text-align: center;
-      -webkit-overflow-scrolling: touch;
-
-      /* ✅ 必须：允许单指平移/滚动，但禁用系统 pinch-zoom（我们接管） */
+      flex: 1; overflow: auto; padding: 20px 0; text-align: center; -webkit-overflow-scrolling: touch;
       touch-action: pan-x pan-y;
     }
     .pdf-page-canvas { display: block; width: 100%; height: auto; }
-    .pdf-page-container {
-      margin: 0 auto 15px;
-      position: relative;
-      background: white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      min-height: 200px;
-    }
+    .pdf-page-container { margin: 0 auto 15px; position: relative; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-height: 200px; }
 
     /* FAB */
     #fab-menu {
-      position: fixed;
-      bottom: 24px;
-      left: 24px;
-      width: var(--fab-size);
-      height: var(--fab-size);
-      background: var(--primary);
-      color: white;
-      border-radius: 16px;
+      position: fixed; bottom: 24px; left: 24px;
+      width: var(--fab-size); height: var(--fab-size);
+      background: var(--primary); color: white; border-radius: 16px;
       box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 90;
-      cursor: pointer;
-      transition: transform 0.2s;
+      display: none; align-items: center; justify-content: center;
+      z-index: 90; cursor: pointer; transition: transform 0.2s;
     }
     #fab-menu:active { transform: scale(0.9); }
 
     /* Toast */
     #toast {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 13px;
-      z-index: 200;
-      display: none;
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px;
+      font-size: 13px; z-index: 200; display: none;
     }
 
     .loading {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.9);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 100;
-      color: var(--primary);
+      position: absolute; inset: 0; background: rgba(255,255,255,0.9);
+      display: none; align-items: center; justify-content: center; flex-direction: column;
+      z-index: 100; color: var(--primary);
     }
 
     @media (max-width: 768px) {
@@ -278,10 +172,37 @@
       #grid-view.list-mode .card-meta { display: none; }
       #fab-menu.visible { display: flex; }
     }
+
+    /* ==========================
+       ✅ 新增：横向 overscroll 控制
+       ========================== */
+    #main-area { overscroll-behavior-x: none; }
+
+    /* ==========================
+       ✅ 新增：左侧安全区
+       ========================== */
+    #swipe-guard{
+      position: fixed;
+      top: 0;
+      left: 0;  /* 从0开始，覆盖整个边缘 */
+      width: 30px;  /* 减小宽度，避免影响内容 */
+      height: 100%;
+      z-index: 9999;
+      background: transparent;
+      touch-action: pan-y;
+    }
+    
+    /* PDF模式下，安全区不可用 */
+    #pdf-view #swipe-guard {
+      display: none;
+    }
   </style>
 </head>
 
 <body>
+  <!-- ✅ 新增：应用内滑动返回安全区 -->
+  <div id="swipe-guard"></div>
+
   <svg style="display:none">
     <symbol id="icon-folder" viewBox="0 0 24 24"><path d="M20,6h-8l-2-2H4C2.9,4,2,4.9,2,6v12c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V8C22,6.9,21.1,6,20,6z" fill="currentColor"/></symbol>
     <symbol id="icon-file" viewBox="0 0 24 24"><path d="M14,2H6C4.9,2,4,2.9,4,4v16c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V8L14,2z M16,18H8v-2h8V18z M16,14H8v-2h8V14z M13,9V3.5 L18.5,9H13z" fill="currentColor"/></symbol>
@@ -374,21 +295,23 @@
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     }
 
-    // ========= 路由工具 =========
+    // ========= 路由工具：统一 pushState，确保 popstate 可拦截 =========
     function navReplace(state, hash) { history.replaceState(state, '', hash); }
     function navPush(state, hash) { history.pushState(state, '', hash); }
 
+    // === 启动：强制至少两层 [guard -> home] 防止直接退出 ===
     function initApp() {
-      // 强制至少两层 [guard -> home]，保证回退可拦截
       navReplace({ mode: 'guard' }, '#guard');
       navPush({ mode: 'home' }, '#home');
 
       setupPdfGestures();
+      setupEdgeSwipeBack();   // ✅ 新增：应用内左侧滑动返回
       initData();
     }
 
     function goBack() { history.back(); }
 
+    // ✅ 关键：统一回退处理（popstate + hashchange 双保险）
     function onBackNavigation() {
       // A. 阅读器 -> 关闭
       if (currentMode !== 'grid') {
@@ -403,7 +326,9 @@
       }
       // C. 根目录 -> 弹回 home + toast（不要退出）
       if (location.hash === '#guard' || !location.hash) {
+        // 推回 home
         navPush({ mode: 'home' }, '#home');
+
         const now = Date.now();
         if (now - lastBackTime >= 2000) {
           lastBackTime = now;
@@ -414,9 +339,85 @@
 
     window.addEventListener('popstate', onBackNavigation);
     window.addEventListener('hashchange', () => {
-      // 某些 WebView 回退只触发 hashchange
+      // 有些 WebView 回退只触发 hashchange，不触发 popstate
       onBackNavigation();
     });
+
+    /* =========================================================
+       ✅ 新增：应用内"左侧滑动返回"
+       ========================================================= */
+    function setupEdgeSwipeBack() {
+      const guard = document.getElementById('swipe-guard');
+      if (!guard) return;
+
+      const TRIGGER_DIST = 80;    // 触发返回的横向距离
+      const MAX_Y = 80;           // 允许的竖向抖动
+      const MAX_TIME = 800;       // 手势最长时间
+
+      let tracking = false;
+      let triggered = false;
+      let startX = 0, startY = 0, startT = 0;
+
+      function reset() {
+        tracking = false;
+        triggered = false;
+      }
+
+      guard.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return reset();
+        
+        // PDF模式下完全禁用滑动返回（使用touch-action: pan-x pan-y）
+        if (currentMode === 'pdf') return reset();
+
+        tracking = true;
+        triggered = false;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        startT = Date.now();
+      }, { passive: true });
+
+      guard.addEventListener('touchmove', (e) => {
+        if (!tracking || triggered) return;
+        if (!e.touches || e.touches.length !== 1) return reset();
+
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+
+        const dx = x - startX;
+        const dy = y - startY;
+        const dt = Date.now() - startT;
+
+        if (dt > MAX_TIME) return reset();
+        if (dx <= 0) return; // 只处理向右滑动
+        if (Math.abs(dy) > MAX_Y && Math.abs(dy) > Math.abs(dx)) return reset();
+
+        // 明显水平滑动：阻止默认，避免系统导航
+        if (dx > 10 && Math.abs(dx) > Math.abs(dy)) {
+          e.preventDefault();
+        }
+
+        if (dx >= TRIGGER_DIST && Math.abs(dy) <= MAX_Y) {
+          triggered = true;
+
+          // 优先检查是否有侧边栏打开
+          const sidebar = document.getElementById('sidebar');
+          const overlay = document.getElementById('overlay');
+          if (sidebar && sidebar.classList.contains('open') && 
+              overlay && overlay.classList.contains('show')) {
+            // 关闭侧边栏
+            toggleSidebar();
+          } else {
+            // 执行返回操作
+            history.back();
+          }
+
+          setTimeout(reset, 0);
+        }
+      }, { passive: false });
+
+      guard.addEventListener('touchend', reset, { passive: true });
+      guard.addEventListener('touchcancel', reset, { passive: true });
+    }
 
     async function initData() {
       let data = null;
@@ -483,7 +484,6 @@
         const isFolder = node.children && node.children.length > 0;
         const title = node.title || node.name;
         const path = node.path || node.url;
-
         const item = document.createElement('div');
         item.className = 'tree-node';
 
@@ -495,7 +495,6 @@
           <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>
           ${isFolder ? `<span class="arrow">▶</span>` : ''}
         `;
-
         content.onclick = () => {
           if (isFolder) {
             const arrow = content.querySelector('.arrow');
@@ -508,7 +507,6 @@
             if (window.innerWidth <= 768) toggleSidebar();
           }
         };
-
         item.appendChild(content);
 
         if (isFolder) {
@@ -516,7 +514,6 @@
           sub.className = 'sub-group';
           item.appendChild(sub);
         }
-
         container.appendChild(item);
       });
     }
@@ -531,8 +528,7 @@
       document.getElementById('page-title').innerText = isRoot ? '知识库首页' : '文件夹';
       document.getElementById('back-btn').style.display = isRoot ? 'none' : 'flex';
 
-      if (!isRoot) grid.classList.add('list-mode');
-      else grid.classList.remove('list-mode');
+      if (!isRoot) grid.classList.add('list-mode'); else grid.classList.remove('list-mode');
 
       nodes.forEach(node => {
         const isFolder = node.children && node.children.length > 0;
@@ -559,12 +555,14 @@
       });
     }
 
+    // ✅ 关键：进入文件夹也 pushState（否则安装版返回可能直接退出）
     function enterFolder(parent, children) {
       navPush({ mode: 'folder' }, '#folder');
       historyStack.push(parent);
       renderGrid(children);
     }
 
+    // ✅ 关键：打开文件也 pushState
     function openFile(path, title) {
       if (!path) return;
       navPush({ mode: 'reader' }, '#reader');
@@ -583,7 +581,6 @@
     async function renderHtml(url) {
       currentMode = 'html';
       switchView('html-view');
-
       const container = document.getElementById('html-content');
       container.innerHTML = '<div style="text-align:center;padding:20px;color:#999">加载中...</div>';
 
@@ -610,7 +607,7 @@
     }
 
     // =========================
-    // PDF：支持按钮缩放 + pinch 缩放（不 destroy 文档）
+    // PDF：不重复下载 + pinch 缩放
     // =========================
     function clearPdfViewOnly() {
       if (pdfIntersectionObserver) { pdfIntersectionObserver.disconnect(); pdfIntersectionObserver = null; }
@@ -626,7 +623,6 @@
       clearPdfViewOnly();
       if (pdfLoadingTask) { try { pdfLoadingTask.destroy(); } catch { } pdfLoadingTask = null; }
       if (currentPdfDoc) { try { currentPdfDoc.destroy(); } catch { } currentPdfDoc = null; }
-      currentPdfUrl = '';
     }
 
     async function renderPdf(url) {
@@ -634,7 +630,6 @@
       switchView('pdf-view');
       document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
 
-      // ✅ 同一个 PDF：不重新下载，只重建视图
       if (currentPdfDoc && currentPdfUrl === url) {
         const mySeqSame = ++pdfRenderSeq;
         clearPdfViewOnly();
@@ -642,7 +637,6 @@
         return;
       }
 
-      // 新 PDF：销毁旧文档再加载
       destroyPdfAll();
 
       const mySeq = ++pdfRenderSeq;
@@ -719,7 +713,6 @@
       }
     }
 
-    // ✅ 更稳的高清渲染：CSS viewport + DPR viewport
     async function renderPageInDiv(pdf, num, div, seq) {
       if (seq !== pdfRenderSeq) return;
       try {
@@ -731,8 +724,10 @@
         const fitScale = containerW / baseVp.width;
 
         const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const outputScale = fitScale * dpr;
+
         const cssViewport = page.getViewport({ scale: fitScale });
-        const renderViewport = page.getViewport({ scale: fitScale * dpr });
+        const renderViewport = page.getViewport({ scale: outputScale });
 
         const canvas = document.createElement('canvas');
         canvas.className = 'pdf-page-canvas';
@@ -751,49 +746,15 @@
       } catch (e) { }
     }
 
-    function rebuildPdfLayoutKeepDoc() {
-      if (!currentPdfDoc || currentMode !== 'pdf') return;
-      const mySeq = ++pdfRenderSeq;
-      clearPdfViewOnly();
-      buildPdfLayout(currentPdfDoc, mySeq);
-    }
-
-    function setPdfScale(newScale, keepCenter = true) {
-      if (!currentPdfDoc || currentMode !== 'pdf') return;
-      newScale = Math.max(0.5, Math.min(4.0, newScale));
-      if (Math.abs(newScale - currentScale) < 1e-6) return;
-
-      const scrollEl = document.getElementById('pdf-scroll');
-      const rect = scrollEl.getBoundingClientRect();
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-
-      const anchorX = cx + scrollEl.scrollLeft;
-      const anchorY = cy + scrollEl.scrollTop;
-
-      const ratio = newScale / currentScale;
-
-      if (keepCenter) {
-        pendingPdfScroll = {
-          left: (anchorX * ratio) - cx,
-          top: (anchorY * ratio) - cy
-        };
-      }
-
-      currentScale = newScale;
-      document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-      rebuildPdfLayoutKeepDoc();
-    }
-
-    window.zoomPdf = function (delta) {
-      setPdfScale(currentScale + delta, true);
-    };
-
-    // ===== pinch：Pointer Events =====
+    // ===== pinch：Pointer Events（安装版更稳定）=====
     function setupPdfGestures() {
       const scrollEl = document.getElementById('pdf-scroll');
       if (!scrollEl) return;
-      if (!('PointerEvent' in window)) return;
+
+      if (!('PointerEvent' in window)) {
+        // 兜底：老环境不支持 PointerEvent，就不启用自定义 pinch
+        return;
+      }
 
       const pointers = new Map();
       let isPinching = false;
@@ -833,16 +794,11 @@
 
       function commitPinch() {
         if (!pinchState) return;
-
         const finalScale = Math.max(0.5, Math.min(4.0, pinchState.lastScale || currentScale));
-        const ratio = finalScale / pinchState.startScale;
-
-        pendingPdfScroll = {
-          top: (pinchState.anchorY * ratio) - pinchState.clientCenterY,
-          left: (pinchState.anchorX * ratio) - pinchState.clientCenterX
-        };
 
         const container = document.getElementById('pdf-container');
+        pendingPdfScroll = { top: scrollEl.scrollTop, left: scrollEl.scrollLeft };
+
         container.style.transform = '';
         container.style.transformOrigin = '';
 
@@ -852,20 +808,24 @@
         pinchState = null;
         isPinching = false;
 
-        rebuildPdfLayoutKeepDoc();
+        if (!currentPdfDoc) return;
+        const mySeq = ++pdfRenderSeq;
+        clearPdfViewOnly();
+        buildPdfLayout(currentPdfDoc, mySeq);
       }
 
       scrollEl.addEventListener('pointerdown', (e) => {
         if (currentMode !== 'pdf' || !currentPdfDoc) return;
         if (e.pointerType !== 'touch') return;
 
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });  // ✅ 修复：直接使用 clientX/clientY
         try { scrollEl.setPointerCapture(e.pointerId); } catch {}
         if (pointers.size === 2) startPinchIfReady();
       }, { passive: true });
 
       scrollEl.addEventListener('pointermove', (e) => {
         if (!pointers.has(e.pointerId)) return;
+        // ✅ 修复：直接使用 clientX/clientY，不要检查 touches
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
         if (!isPinching || !pinchState || pointers.size !== 2) return;
@@ -883,7 +843,7 @@
           });
         }
 
-        // ✅ 只在双指 pinch 时阻止默认（不会影响单指滚动）
+        // 双指时阻止默认行为
         e.preventDefault();
       }, { passive: false });
 
@@ -896,11 +856,44 @@
       scrollEl.addEventListener('pointercancel', endPointer, { passive: true });
     }
 
+    function setPdfScale(newScale, keepCenter = true) {
+      if (!currentPdfDoc || currentMode !== 'pdf') return;
+      newScale = Math.max(0.5, Math.min(4.0, newScale));
+      if (Math.abs(newScale - currentScale) < 1e-6) return;
+
+      const scrollEl = document.getElementById('pdf-scroll');
+      const rect = scrollEl.getBoundingClientRect();
+
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const anchorX = cx + scrollEl.scrollLeft;
+      const anchorY = cy + scrollEl.scrollTop;
+
+      const ratio = newScale / currentScale;
+
+      if (keepCenter) {
+        pendingPdfScroll = {
+          top: (anchorY * ratio) - cy,
+          left: (anchorX * ratio) - cx
+        };
+      }
+
+      currentScale = newScale;
+      document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
+
+      const mySeq = ++pdfRenderSeq;
+      clearPdfViewOnly();
+      buildPdfLayout(currentPdfDoc, mySeq);
+    }
+
+    window.zoomPdf = function (delta) {
+      setPdfScale(currentScale + delta, true);
+    };
+
     function closeReader() {
       currentMode = 'grid';
       switchView('grid-view');
 
-      // 关闭阅读器：销毁文档（释放内存）
       pdfRenderSeq++;
       destroyPdfAll();
 
@@ -919,8 +912,7 @@
       document.getElementById('reader-tools').style.display = (id === 'pdf-view') ? 'flex' : 'none';
 
       const fab = document.getElementById('fab-menu');
-      if (id === 'grid-view') fab.classList.add('visible');
-      else fab.classList.remove('visible');
+      if (id === 'grid-view') fab.classList.add('visible'); else fab.classList.remove('visible');
     }
 
     window.toggleSidebar = function () {
