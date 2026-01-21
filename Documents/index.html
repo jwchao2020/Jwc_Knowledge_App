@@ -12,7 +12,6 @@
           src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
-    /* === 变量配置 === */
     :root {
       --primary: #10b981;
       --primary-bg: rgba(16, 185, 129, 0.08);
@@ -41,7 +40,6 @@
 
     .svg-icon { width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s; vertical-align: text-bottom; }
 
-    /* 侧边栏 */
     #sidebar {
       width: var(--sidebar-width); height: 100%; background: var(--sidebar-bg);
       border-right: 1px solid var(--border); display: flex; flex-direction: column;
@@ -66,7 +64,6 @@
     .sub-group { display: none; padding-left: 12px; border-left: 1px solid #e2e8f0; margin-left: 11px; }
     .sub-group.show { display: block; }
 
-    /* 主区域 */
     #main-area { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; width: 100%; }
 
     #top-bar {
@@ -84,7 +81,6 @@
 
     #views-container { flex: 1; position: relative; overflow: hidden; }
 
-    /* 网格视图 */
     #grid-view {
       position: absolute; inset: 0; overflow-y: auto; padding: 20px;
       display: grid; gap: 16px; align-content: start;
@@ -115,12 +111,10 @@
     #grid-view.list-mode .card-title { text-align: left; flex: 1; -webkit-line-clamp: 1; }
     #grid-view.list-mode .card-meta { margin-top: 0; background: transparent; }
 
-    /* 阅读器容器 */
     .reader-container {
       position: absolute; inset: 0; background: #fff; display: none; flex-direction: column;
     }
 
-    /* HTML 内容容器 */
     #html-content {
       flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch;
       max-width: 800px; margin: 0 auto; width: 100%;
@@ -131,13 +125,11 @@
     #html-content pre { background: #f1f5f9; padding: 12px; border-radius: 8px; overflow-x: auto; }
     #html-content blockquote { border-left: 4px solid var(--primary); margin: 0; padding-left: 16px; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 4px; }
 
-    /* PDF 容器 */
     #pdf-view { background: #525659; }
     #pdf-scroll { flex: 1; overflow: auto; padding: 20px 0; text-align: center; -webkit-overflow-scrolling: touch; }
     .pdf-page-canvas { display: block; width: 100%; height: auto; }
     .pdf-page-container { margin: 0 auto 15px; position: relative; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-height: 200px; }
 
-    /* FAB */
     #fab-menu {
       position: fixed; bottom: 24px; left: 24px;
       width: 50px; height: 50px;
@@ -148,7 +140,6 @@
     }
     #fab-menu:active { transform: scale(0.9); }
 
-    /* Toast 提示 */
     #toast {
       position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
       background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px;
@@ -161,12 +152,11 @@
       z-index: 100; color: var(--primary);
     }
 
-    /* 🔴 调试控制台 - 常驻底部方便排查 */
     #debug-console {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
-        background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 10px;
-        z-index: 10000; overflow-y: auto; padding: 5px; pointer-events: none;
-        display: block; /* 调试模式开启 */
+      position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
+      background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 10px;
+      z-index: 10000; overflow-y: auto; padding: 5px; pointer-events: none;
+      display: block;
     }
 
     @media (max-width: 768px) {
@@ -223,12 +213,10 @@
     <div id="views-container">
       <div id="grid-view" class="visible"></div>
 
-      <!-- HTML 阅读器 -->
       <div id="html-view" class="reader-container">
         <div id="html-content"></div>
       </div>
 
-      <!-- PDF 阅读器 -->
       <div id="pdf-view" class="reader-container">
         <div id="pdf-scroll"><div id="pdf-container"></div></div>
       </div>
@@ -249,24 +237,41 @@
   <script src="data.js"></script>
 
   <script>
+    /* ===========================
+       Debug
+    ============================ */
     function log(msg) {
-        console.log(msg);
-        const el = document.getElementById('debug-console');
-        const line = document.createElement('div');
-        line.innerText = `> ${msg}`;
-        el.prepend(line);
-        if (el.children.length > 10) el.lastChild.remove();
+      console.log(msg);
+      const el = document.getElementById('debug-console');
+      const line = document.createElement('div');
+      line.innerText = `> ${msg}`;
+      el.prepend(line);
+      if (el.children.length > 30) el.lastChild.remove();
     }
 
+    /* ===========================
+       Constants
+    ============================ */
     const USER = 'jwchao2020';
     const REPO = 'Jwc_Knowledge_App';
     const BRANCH = 'gh-pages';
     const CDN_ROOT = `https://cdn.jsdelivr.net/gh/${USER}/${REPO}@${BRANCH}/Documents/`;
 
+    const ROUTES = {
+      HOME: '#home',
+      FOLDER: '#folder',
+      READER: '#reader'
+    };
+
+    /* ===========================
+       State
+    ============================ */
     let useOnline = false;
+
     let currentScale = 1.0;
-    let historyStack = [];
-    let currentMode = 'grid';
+    let historyStack = [];        // 用于“文件夹层级”回退（你原本就这么做）
+    let currentMode = 'grid';     // 'grid' | 'html' | 'pdf'
+
     let lastBackTime = 0;
 
     let currentPdfDoc = null;
@@ -278,91 +283,161 @@
     let pinchState = null;
     let pinchRaf = 0;
     let pendingPdfScroll = null;
-    let zoomTimer = null;
+
+    // 记录当前阅读器状态（用于 hash 回到 #reader 时恢复）
+    let readerState = { path: '', title: '', kind: '' }; // kind: 'pdf' | 'html'
+
+    // 路由同步防抖/避免递归
+    let syncing = false;
 
     if (typeof pdfjsLib !== 'undefined') {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     }
 
-    // === 🛠️ 启动逻辑 ===
-    function initApp() {
-        log("Init App");
-        
-        // 1. 强制写入 Hash，建立历史栈
-        if (window.location.hash !== '#home') {
-             log("Setting hash to #home");
-             window.location.hash = 'home'; 
-        }
+    /* ===========================
+       Router: 核心修复点
+       - 任何历史变化(popstate/hashchange) => syncFromHash()
+       - 任何 UI 操作 => navigate(hash)
+    ============================ */
 
-        // 2. 绑定手势
-        setupPdfGestures();
-
-        // 3. 绑定 Capacitor 物理返回键
-        if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
-            log("Capacitor BackButton Listener");
-            Capacitor.Plugins.App.addListener('backButton', () => {
-                log("Native Back Pressed");
-                // 优先走我们的逻辑
-                handleRouterBack();
-            });
-        }
-        
-        initData();
+    function normalizeHash(h) {
+      if (!h || h === '#') return ROUTES.HOME;
+      if (h === 'home') return ROUTES.HOME;       // 兼容你之前写的 'home'
+      if (!h.startsWith('#')) return '#' + h;
+      // 只允许这三个 hash，其它都当 home
+      if (![ROUTES.HOME, ROUTES.FOLDER, ROUTES.READER].includes(h)) return ROUTES.HOME;
+      return h;
     }
 
-    // === 🟢 统一路由回退逻辑 ===
-    function handleRouterBack() {
-        // A: 关闭阅读器
-        if (currentMode !== 'grid') {
-            log("Back: Close Reader");
-            closeReader(true);
-            return;
-        }
-        
-        // B: 文件夹返回
-        if (historyStack.length > 0) {
-            log("Back: Up Folder");
-            const parent = historyStack.pop();
-            renderGrid(parent);
-            return;
-        }
-        
-        // C: 根目录防退
-        const now = Date.now();
-        if (now - lastBackTime < 2000) {
-            log("Back: EXIT");
-            if (window.Capacitor) Capacitor.Plugins.App.exitApp();
-        } else {
-            lastBackTime = now;
-            showToast();
-            log("Back: Toast shown (Pushing #home guard)");
-            // 关键：如果你是侧滑触发的，此时 Hash 已经空了或者变了，必须补回去
-            // 这样下次侧滑还有东西可退
-            window.history.pushState(null, null, '#home');
-        }
+    function navigate(toHash, { replace = false } = {}) {
+      const h = normalizeHash(toHash);
+      if (normalizeHash(location.hash) === h) return;
+      syncing = true;
+      if (replace) {
+        window.history.replaceState(null, '', h);
+      } else {
+        window.history.pushState(null, '', h);
+      }
+      syncing = false;
+      // pushState/replaceState 不会触发 popstate，但会改 hash（在部分 WebView 中也不触发 hashchange）
+      // 所以主动同步一次 UI
+      syncFromHash();
     }
 
-    // 🟢 监听浏览器/系统侧滑触发的历史变动
-    window.addEventListener('popstate', (e) => {
-        log(`Popstate: ${location.hash}`);
-        
-        // 如果 Hash 变空了，说明用户试图“退到底”
-        if (!location.hash || location.hash === '#') {
-             handleRouterBack();
+    function syncFromHash() {
+      if (syncing) return;
+
+      const h = normalizeHash(location.hash);
+      log(`SyncFromHash => ${h}`);
+
+      if (h === ROUTES.READER) {
+        // 恢复阅读器
+        if (readerState && readerState.path) {
+          openFile(readerState.path, readerState.title, { fromRouter: true });
         } else {
-             // 可能是正常的 Hash 跳转，不做干扰
+          // 没有可恢复内容，退回 folder/home
+          navigate(historyStack.length > 0 ? ROUTES.FOLDER : ROUTES.HOME, { replace: true });
         }
+        return;
+      }
+
+      if (h === ROUTES.FOLDER) {
+        // 显示当前文件夹层（由 historyStack 决定）
+        renderGrid(getCurrentFolderNodes());
+        return;
+      }
+
+      // HOME
+      // 清空层级回到根
+      historyStack = [];
+      renderGrid(window.__ROOT_DATA__ || []);
+    }
+
+    // 统一回退：让手势/物理键/按钮都走同一套逻辑
+    function handleBack() {
+      log(`HandleBack (mode=${currentMode}, hash=${location.hash})`);
+
+      // 1) 阅读器优先关闭
+      if (currentMode !== 'grid') {
+        closeReader(true);
+        return;
+      }
+
+      // 2) 文件夹层级回退
+      if (historyStack.length > 0) {
+        historyStack.pop(); // 回到上一级
+        // 回退后应该处于 FOLDER（若栈空则 HOME）
+        navigate(historyStack.length > 0 ? ROUTES.FOLDER : ROUTES.HOME, { replace: true });
+        return;
+      }
+
+      // 3) 根目录：二次退出
+      const now = Date.now();
+      if (now - lastBackTime < 2000) {
+        log("Back: EXIT");
+        if (window.Capacitor?.Plugins?.App) {
+          window.Capacitor.Plugins.App.exitApp();
+        }
+      } else {
+        lastBackTime = now;
+        showToast();
+        // 保持在 HOME，不要 push 新历史
+        navigate(ROUTES.HOME, { replace: true });
+        log("Back: Toast shown (stay at #home)");
+      }
+    }
+
+    // 浏览器/系统手势返回：可能触发 popstate，也可能仅触发 hashchange（不同 WebView/浏览器行为不同）
+    window.addEventListener('popstate', () => {
+      log(`Popstate: ${location.hash}`);
+      // 重要：不再“只在 hash 为空时处理”，而是统一同步
+      syncFromHash();
     });
 
-    // 按钮点击返回
-    function goBack() { 
-        log("Btn Back");
-        // 调用 history.back() 会触发 popstate，从而复用上面的逻辑
-        window.history.back(); 
+    window.addEventListener('hashchange', () => {
+      log(`Hashchange: ${location.hash}`);
+      syncFromHash();
+    });
+
+    // 返回按钮：用统一回退（不要直接 history.back() 依赖 popstate）
+    function goBack() {
+      log("Btn Back");
+      handleBack();
     }
 
+    /* ===========================
+       App init
+    ============================ */
+    function initApp() {
+      log("Init App");
+
+      // 绑定 PDF 手势
+      setupPdfGestures();
+
+      // 绑定 Capacitor 物理返回键
+      if (window.Capacitor?.Plugins?.App) {
+        log("Capacitor BackButton Listener");
+        window.Capacitor.Plugins.App.addListener('backButton', () => {
+          log("Native Back Pressed");
+          handleBack();
+        });
+      }
+
+      // 初始化 hash（用 replace，不污染历史）
+      const h = normalizeHash(location.hash);
+      if (h !== location.hash) {
+        window.history.replaceState(null, '', h);
+      }
+
+      initData();
+    }
+
+    /* ===========================
+       Data init (你的原逻辑保留)
+    ============================ */
     async function initData() {
       let data = null;
+
       if (typeof LOCAL_DATA !== 'undefined') {
         data = parseData(LOCAL_DATA);
         updateBadge('OFFLINE', LOCAL_DATA.version);
@@ -378,7 +453,7 @@
           if (remoteData) {
             const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version || 0) : 0;
             const remoteVer = Number(remoteData.version || 0);
-            
+
             if (remoteVer > localVer) {
               useOnline = true;
               data = parseData(remoteData);
@@ -389,15 +464,22 @@
             }
           }
         }
-      } catch(e) { log("Online Check Failed"); }
+      } catch(e) {
+        log("Online Check Failed");
+      }
 
       if (data) {
+        // 根数据缓存，供 syncFromHash 使用
+        window.__ROOT_DATA__ = data;
+
         renderSidebar(data);
-        renderGrid(data);
+        // 根据当前 hash 同步 UI（支持冷启动直接进 folder/reader）
+        syncFromHash();
       } else {
         log("No Data Found");
         document.getElementById('grid-view').innerHTML = '<div style="padding:40px;text-align:center;color:#999">暂无数据</div>';
         switchView('grid-view');
+        navigate(ROUTES.HOME, { replace: true });
       }
     }
 
@@ -426,6 +508,9 @@
       return { icon: '#icon-file', color: '#64748b', bg: '#f1f5f9' };
     }
 
+    /* ===========================
+       Sidebar / Grid
+    ============================ */
     function renderSidebar(nodes, container = document.getElementById('tree-container'), level = 0) {
       if (level === 0) container.innerHTML = '';
       nodes.forEach(node => {
@@ -443,6 +528,7 @@
           <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>
           ${isFolder ? `<span class="arrow">▶</span>` : ''}
         `;
+
         content.onclick = () => {
           if (isFolder) {
             const arrow = content.querySelector('.arrow');
@@ -455,6 +541,7 @@
             if (window.innerWidth <= 768) toggleSidebar();
           }
         };
+
         item.appendChild(content);
         if (isFolder) {
           const sub = document.createElement('div');
@@ -465,13 +552,29 @@
       });
     }
 
+    function getCurrentFolderNodes() {
+      // historyStack 为空 => root
+      if (historyStack.length === 0) return window.__ROOT_DATA__ || [];
+      // 当前展示的 folder 节点 = 栈顶对应的 children
+      // 你的结构是：enterFolder(parentNodes, children) push parentNodes
+      // 所以“当前 children”在 renderGrid(children) 时并没有存起来
+      // 简单稳妥：用一个 currentFolderNodes 保存当前渲染 nodes
+      return window.__CURRENT_FOLDER_NODES__ || (window.__ROOT_DATA__ || []);
+    }
+
+    function setCurrentFolderNodes(nodes) {
+      window.__CURRENT_FOLDER_NODES__ = nodes;
+    }
+
     function renderGrid(nodes) {
+      setCurrentFolderNodes(nodes);
+
       const grid = document.getElementById('grid-view');
       grid.innerHTML = '';
       currentMode = 'grid';
       switchView('grid-view');
 
-      const isRoot = historyStack.length === 0;
+      const isRoot = (historyStack.length === 0);
       document.getElementById('page-title').innerText = isRoot ? '知识库首页' : '文件夹';
       document.getElementById('back-btn').style.display = isRoot ? 'none' : 'flex';
 
@@ -482,12 +585,14 @@
         const title = node.title || node.name;
         const path = node.path || node.url;
         const style = getTypeStyle(path, isFolder);
+
         const card = document.createElement('div');
         card.className = 'card';
         card.onclick = () => {
           if (isFolder) enterFolder(nodes, node.children);
           else openFile(path, title);
         };
+
         const meta = isFolder ? `${node.children.length} 项` : (path ? path.split('.').pop().toUpperCase() : 'FILE');
         card.innerHTML = `
           <div class="card-icon-box" style="background:${style.bg}; color:${style.color}">
@@ -500,16 +605,30 @@
       });
     }
 
-    function enterFolder(parent, children) {
-      // 显式改变 Hash
-      window.location.hash = "#folder";
-      historyStack.push(parent);
+    function enterFolder(parentNodes, children) {
+      // 进入文件夹：压栈，然后路由到 FOLDER
+      historyStack.push(parentNodes);
+      navigate(ROUTES.FOLDER);
       renderGrid(children);
     }
 
-    function openFile(path, title) {
+    /* ===========================
+       Open file / Readers
+    ============================ */
+    function openFile(path, title, { fromRouter = false } = {}) {
       if (!path) return;
-      window.location.hash = "#reader";
+
+      // 保存阅读器状态，供 #reader 路由恢复
+      readerState = {
+        path,
+        title,
+        kind: (path.toLowerCase().endsWith('.pdf') ? 'pdf' : 'html')
+      };
+
+      if (!fromRouter) {
+        navigate(ROUTES.READER);
+      }
+
       currentMode = 'reader';
       document.getElementById('page-title').innerText = title;
       document.getElementById('back-btn').style.display = 'flex';
@@ -557,7 +676,7 @@
       switchView('pdf-view');
       document.getElementById('reader-tools').style.display = 'flex';
       document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-      
+
       cleanupPdf();
 
       const mySeq = ++pdfRenderSeq;
@@ -669,7 +788,9 @@
       } catch (e) {}
     }
 
-    // === Pinch 手势 ===
+    /* ===========================
+       Pinch Zoom (保留)
+    ============================ */
     function setupPdfGestures() {
       const scrollEl = document.getElementById('pdf-scroll');
       if (!scrollEl) return;
@@ -689,7 +810,7 @@
           const rect = scrollEl.getBoundingClientRect();
           const centerX = (p1.x + p2.x) / 2 - rect.left;
           const centerY = (p1.y + p2.y) / 2 - rect.top;
-          
+
           pinchState = {
             startDist: Math.hypot(p1.x - p2.x, p1.y - p2.y),
             startScale: currentScale,
@@ -715,7 +836,7 @@
         if (pinchState.startDist < 1) return;
 
         const nextScale = Math.max(0.5, Math.min(4.0, pinchState.startScale * (dist / pinchState.startDist)));
-        
+
         if (!pinchRaf) {
           pinchRaf = requestAnimationFrame(() => {
             applyPreview(nextScale);
@@ -759,24 +880,24 @@
     function commitZoomTo(nextScale, state) {
       const container = document.getElementById('pdf-container');
       const scrollEl = document.getElementById('pdf-scroll');
-      
+
       const finalScale = Math.max(0.5, Math.min(4.0, nextScale || currentScale));
       const ratio = finalScale / state.startScale;
-      
-      pendingPdfScroll = { 
-        top: (state.anchorY * ratio) - state.clientCenterY, 
+
+      pendingPdfScroll = {
+        top: (state.anchorY * ratio) - state.clientCenterY,
         left: (state.anchorX * ratio) - state.clientCenterX
       };
 
       container.style.transform = '';
       container.style.transformOrigin = '';
-      
+
       currentScale = finalScale;
       document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-      
+
       pinchState = null;
-      
-      cleanupPdf(); 
+
+      cleanupPdf();
       rebuildPdfLayout();
     }
 
@@ -803,33 +924,31 @@
     }
 
     function closeReader(isSystemBack) {
+      log(`CloseReader(isSystemBack=${!!isSystemBack})`);
       currentMode = 'grid';
       switchView('grid-view');
-      pdfRenderSeq++; 
+      pdfRenderSeq++;
       cleanupPdf();
       document.getElementById('html-content').innerHTML = '';
-      document.getElementById('page-title').innerText = historyStack.length > 0 ? '文件夹' : '知识库首页';
-      if (historyStack.length === 0) document.getElementById('back-btn').style.display = 'none';
-      
-      // 退出阅读器时，确保回到 #folder 状态（或 #home 如果栈空了）
-      const targetHash = historyStack.length > 0 ? '#folder' : '#home';
-      // 避免 pushState 堆叠，用 replace
-      window.history.replaceState(null, null, targetHash);
+
+      // 回到 folder/home（用 replace 避免堆历史）
+      const target = historyStack.length > 0 ? ROUTES.FOLDER : ROUTES.HOME;
+      navigate(target, { replace: true });
     }
 
     window.zoomPdf = function(delta) {
       const newScale = Math.max(0.5, Math.min(4.0, currentScale + delta));
       const scrollEl = document.getElementById('pdf-scroll');
       const rect = scrollEl.getBoundingClientRect();
-      
+
       const pinchSim = {
-           startScale: currentScale,
-           startScrollTop: scrollEl.scrollTop,
-           startScrollLeft: scrollEl.scrollLeft,
-           anchorX: rect.width/2 + scrollEl.scrollLeft,
-           anchorY: rect.height/2 + scrollEl.scrollTop,
-           clientCenterX: rect.width/2,
-           clientCenterY: rect.height/2
+        startScale: currentScale,
+        startScrollTop: scrollEl.scrollTop,
+        startScrollLeft: scrollEl.scrollLeft,
+        anchorX: rect.width/2 + scrollEl.scrollLeft,
+        anchorY: rect.height/2 + scrollEl.scrollTop,
+        clientCenterX: rect.width/2,
+        clientCenterY: rect.height/2
       };
       commitZoomTo(newScale, pinchSim);
     }
@@ -842,7 +961,7 @@
           return;
         }
         if (v === 'grid-view') {
-          el.style.display = ''; 
+          el.style.display = '';
         } else {
           el.style.display = 'flex';
         }
