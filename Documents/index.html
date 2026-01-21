@@ -200,7 +200,7 @@
                 <div class="page-title" id="page-title">首页</div>
             </div>
             
-            <!-- 🟢 缩放工具栏 -->
+            <!-- 缩放工具栏 -->
             <div id="reader-tools" style="display:none; gap:4px;">
                 <button class="tool-btn" onclick="zoomPdf(-0.2)">－</button>
                 <span id="zoom-val" style="font-size:12px; min-width:32px; text-align:center;">100%</span>
@@ -237,6 +237,7 @@
     <script src="data.js"></script>
 
 <script>
+    // === 配置 ===
     const USER = 'jwchao2020';
     const REPO = 'Jwc_Knowledge_App';
     const BRANCH = 'gh-pages';
@@ -265,27 +266,57 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     }
 
-    // === 🛠️ 启动逻辑 (双层防退) ===
-    function initApp() {
-        // 🟢 关键：强制推入两个状态，确保有路可退
-        // 这样第一次侧滑会触发 popstate，而不是退出
-        if (!location.hash || location.hash === '#home') {
-            window.history.replaceState({ mode: 'root' }, null, ' ');
-            window.history.pushState({ mode: 'home' }, null, '#home');
+    // === 安全的 History 操作辅助函数 ===
+    function safePushState(state, title, url) {
+        try {
+            window.history.pushState(state, title, url);
+        } catch (e) {
+            console.warn('pushState failed (likely security restriction), fallback to no-url push', e);
+            try {
+                window.history.pushState(state, title);
+            } catch(e2) {}
         }
+    }
 
-        // 挂载手势
+    function safeReplaceState(state, title, url) {
+        try {
+            window.history.replaceState(state, title, url);
+        } catch (e) {
+            console.warn('replaceState failed, fallback to no-url replace', e);
+            try {
+                window.history.replaceState(state, title);
+            } catch(e2) {}
+        }
+    }
+
+    // === 🛠️ 启动逻辑 ===
+    function initApp() {
+        // 1. 初始化 History 垫片 (使用安全调用)
+        // 尝试重置为 [root, home]
+        // 注意：在受限环境无法修改 URL，所以 url 参数可能被忽略
+        safeReplaceState({ mode: 'root' }, null); 
+        safePushState({ mode: 'home' }, null, '#home');
+
+        // 2. 挂载手势
         setupPdfGestures();
 
-        // Capacitor 原生返回拦截 (辅助)
+        // 3. Capacitor 原生返回拦截
         if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
             Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
-                // 如果是阅读器或子目录，优先 JS 返回
                 if (currentMode !== 'grid' || historyStack.length > 0) {
                     goBack();
                 } else {
-                    // 根目录：尝试触发 popstate 逻辑，或直接双击退出
-                    handleRootExit();
+                    const now = Date.now();
+                    if (now - lastBackTime < 2000) {
+                        Capacitor.Plugins.App.exitApp();
+                    } else {
+                        lastBackTime = now;
+                        showToast();
+                        // 补救垫片
+                        if (location.hash !== '#home') {
+                             safePushState(null, null, '#home');
+                        }
+                    }
                 }
             });
         }
@@ -293,48 +324,32 @@
         initData();
     }
 
-    // === 🟢 核心路由控制 (Popstate) ===
+    // === 🟢 核心路由控制 ===
     window.addEventListener('popstate', (e) => {
-        // 情况A: 从阅读器返回
+        // A: 阅读器返回
         if (currentMode !== 'grid') {
             closeReader(true);
-            // 保持在 #home，避免退到空
-            if (location.hash !== '#home') history.pushState(null, null, '#home');
             return;
         } 
         
-        // 情况B: 从子文件夹返回
+        // B: 子文件夹返回
         if (historyStack.length > 0) {
             const parent = historyStack.pop();
             renderGrid(parent);
-            if (location.hash !== '#home') history.pushState(null, null, '#home');
             return;
         } 
         
-        // 情况C: 根目录侧滑 (准备退出)
-        handleRootExit();
-    });
-
-    function handleRootExit() {
-        const now = Date.now();
-        if (now - lastBackTime < 2000) {
-            // 确认退出
-            if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
-                Capacitor.Plugins.App.exitApp();
-            } else {
-                // 浏览器环境：退无可退
-                history.back();
-            }
-        } else {
-            // 第一次侧滑：提示 + 补回垫片
-            lastBackTime = now;
-            showToast();
-            // 🟢 关键：死循环防线，只要不双击，永远退不出去
-            if (location.hash !== '#home') {
-                history.pushState(null, null, '#home');
+        // C: 根目录防退 (URL 变空或退到 root)
+        if (location.hash !== '#home') {
+            safePushState(null, null, '#home'); // 强行推回 home
+            
+            const now = Date.now();
+            if (now - lastBackTime >= 2000) {
+                lastBackTime = now;
+                showToast();
             }
         }
-    }
+    });
 
     function goBack() { window.history.back(); }
 
@@ -362,7 +377,7 @@
                     }
                 }
             }
-        } catch(e) { console.log('Offline'); }
+        } catch(e) { console.log('Offline check failed'); }
 
         if (data) {
             renderSidebar(data);
@@ -471,20 +486,21 @@
     }
 
     function enterFolder(parent, children) {
-        window.location.hash = "#folder";
+        safePushState({ mode: 'folder' }, null, '#folder');
         historyStack.push(parent);
         renderGrid(children);
     }
 
     function openFile(path, title) {
         if (!path) return;
-        window.location.hash = "#reader";
-        currentMode = 'reader';
+        safePushState({ mode: 'reader' }, null, '#reader');
         document.getElementById('page-title').innerText = title;
         document.getElementById('back-btn').style.display = 'flex';
         
         let finalPath = encodePath(path);
-        if (useOnline) finalPath = CDN_ROOT + finalPath;
+        if (useOnline) {
+            finalPath = CDN_ROOT + finalPath;
+        }
 
         if (path.toLowerCase().endsWith('.pdf')) renderPdf(finalPath);
         else renderHtml(finalPath);
@@ -502,6 +518,7 @@
             let html = await res.text();
             
             const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+            
             const isAbs = (v) => /^(https?:|data:|#|mailto:|tel:)/i.test(v);
             const toAbsUrl = (v) => { try { return new URL(v, baseUrl).href; } catch { return v; } };
             const replaceFn = (m, attr, val) => {
@@ -515,13 +532,15 @@
             html = html.replace(/(href)='([^']+)'/g, (m,a,v)=>replaceFn(m,a,v));
 
             container.innerHTML = html;
+            
             if (window.MathJax) MathJax.typesetPromise([container]);
+
         } catch (e) {
             container.innerHTML = `<div style="color:red;text-align:center;padding:20px">${e.message}</div>`;
         }
     }
 
-    // === PDF 逻辑 (缩放+Pinch回归) ===
+    // === PDF 逻辑 ===
     async function renderPdf(url) {
         currentMode = 'pdf';
         switchView('pdf-view');
@@ -614,12 +633,9 @@
             const baseVp = page.getViewport({ scale: 1 });
             const fitScale = containerW / baseVp.width; 
             
-            // 渲染精度 2.0
             const dpr = Math.max(window.devicePixelRatio || 1, 2.0); 
-            // 物理像素 = 适配容器宽度 * DPR
             const outputScale = fitScale * dpr;
 
-            // 显示尺寸 = 适配容器宽度
             const viewport = page.getViewport({ scale: fitScale });
 
             const canvas = document.createElement('canvas');
@@ -786,11 +802,10 @@
         document.getElementById('page-title').innerText = historyStack.length > 0 ? '文件夹' : '知识库首页';
         if (historyStack.length === 0) document.getElementById('back-btn').style.display = 'none';
         
-        // 返回列表时确保 hash 状态正确
-        window.location.hash = "#folder";
+        // 确保hash状态正确
+        if (location.hash !== '#home') safeReplaceState(null, null, '#home');
     }
 
-    // 🟢 按钮缩放
     window.zoomPdf = function(delta) {
         const newScale = Math.max(0.5, Math.min(4.0, currentScale + delta));
         const scrollEl = document.getElementById('pdf-scroll');
