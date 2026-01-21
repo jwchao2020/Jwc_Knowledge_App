@@ -36,7 +36,7 @@
       height: 100vh;
       overflow: hidden;
       display: flex;
-      overscroll-behavior-x: none; 
+      overscroll-behavior: none;
     }
 
     .svg-icon { width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s; vertical-align: text-bottom; }
@@ -161,20 +161,12 @@
       z-index: 100; color: var(--primary);
     }
 
-    /* 🟢 左侧手势感应区 (隐形) */
-    #edge-swipe-handler {
-        position: fixed; top: 0; left: 0; width: 50px; height: 100%;
-        z-index: 9999; 
-        background: transparent; 
-        touch-action: none; /* 禁止系统手势 */
-    }
-
-    /* 🔴 调试控制台 */
+    /* 🔴 调试控制台 - 常驻底部方便排查 */
     #debug-console {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 120px;
-        background: rgba(0,0,0,0.8); color: #0f0; font-family: monospace; font-size: 10px;
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
+        background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 10px;
         z-index: 10000; overflow-y: auto; padding: 5px; pointer-events: none;
-        display: none; 
+        display: block; /* 调试模式开启 */
     }
 
     @media (max-width: 768px) {
@@ -184,7 +176,6 @@
       #overlay.show { display: block; }
       #grid-view.list-mode .card-meta { display: none; }
       #fab-menu.visible { display: flex; }
-      #debug-console { display: block; } 
     }
   </style>
 </head>
@@ -197,7 +188,6 @@
     <symbol id="icon-back" viewBox="0 0 24 24"><path d="M20,11H7.83l5.59-5.59L12,4l-8,8l8,8l1.41-1.41L7.83,13H20V11z" fill="currentColor"/></symbol>
   </svg>
 
-  <div id="edge-swipe-handler"></div>
   <div id="debug-console"></div>
 
   <div id="sidebar">
@@ -217,7 +207,7 @@
   <div id="main-area">
     <div id="top-bar">
       <div class="bar-left">
-        <button id="back-btn" class="tool-btn" style="display:none" onclick="handleCustomBack()">
+        <button id="back-btn" class="tool-btn" style="display:none" onclick="goBack()">
           <svg class="svg-icon"><use href="#icon-back"></use></svg>
         </button>
         <div class="page-title" id="page-title">首页</div>
@@ -259,14 +249,13 @@
   <script src="data.js"></script>
 
   <script>
-    // === 🟢 调试工具 ===
     function log(msg) {
         console.log(msg);
         const el = document.getElementById('debug-console');
         const line = document.createElement('div');
-        line.innerText = `[${new Date().toLocaleTimeString().split(' ')[0]}] ${msg}`;
+        line.innerText = `> ${msg}`;
         el.prepend(line);
-        if (el.children.length > 20) el.lastChild.remove();
+        if (el.children.length > 10) el.lastChild.remove();
     }
 
     const USER = 'jwchao2020';
@@ -295,122 +284,93 @@
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     }
 
-    function safePush(state, title, url) {
-        try { history.pushState(state, title, url); } 
-        catch(e) { log('Push err: ' + e.message); try { history.pushState(state, title); } catch(e2){} }
-    }
-    function safeReplace(state, title, url) {
-        try { history.replaceState(state, title, url); } 
-        catch(e) { log('Rep err: ' + e.message); try { history.replaceState(state, title); } catch(e2){} }
-    }
-
+    // === 🛠️ 启动逻辑 ===
     function initApp() {
-        log('App init starting...');
+        log("Init App");
         
-        // 1. 初始化历史垫片
-        safeReplace({ mode: 'root' }, null); 
-        safePush({ mode: 'home' }, null, '#home');
-        
-        // 2. 🟢 启动手动侧滑监听
-        setupEdgeSwipe();
+        // 1. 强制写入 Hash，建立历史栈
+        if (window.location.hash !== '#home') {
+             log("Setting hash to #home");
+             window.location.hash = 'home'; 
+        }
 
-        // 3. Capacitor 拦截
+        // 2. 绑定手势
+        setupPdfGestures();
+
+        // 3. 绑定 Capacitor 物理返回键
         if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
-            log('Capacitor detected');
+            log("Capacitor BackButton Listener");
             Capacitor.Plugins.App.addListener('backButton', () => {
-                log('Native Back');
-                handleCustomBack();
+                log("Native Back Pressed");
+                // 优先走我们的逻辑
+                handleRouterBack();
             });
         }
         
-        // 4. PDF 手势
-        setupPdfGestures();
-
         initData();
     }
 
-    function handleCustomBack() {
-        log(`handleBack: mode=${currentMode}, stack=${historyStack.length}`);
-
+    // === 🟢 统一路由回退逻辑 ===
+    function handleRouterBack() {
+        // A: 关闭阅读器
         if (currentMode !== 'grid') {
-            closeReader();
+            log("Back: Close Reader");
+            closeReader(true);
             return;
         }
+        
+        // B: 文件夹返回
         if (historyStack.length > 0) {
+            log("Back: Up Folder");
             const parent = historyStack.pop();
             renderGrid(parent);
             return;
         }
         
+        // C: 根目录防退
         const now = Date.now();
         if (now - lastBackTime < 2000) {
+            log("Back: EXIT");
             if (window.Capacitor) Capacitor.Plugins.App.exitApp();
         } else {
             lastBackTime = now;
             showToast();
-            if (location.hash !== '#home') safePush(null, null, '#home');
+            log("Back: Toast shown (Pushing #home guard)");
+            // 关键：如果你是侧滑触发的，此时 Hash 已经空了或者变了，必须补回去
+            // 这样下次侧滑还有东西可退
+            window.history.pushState(null, null, '#home');
         }
     }
 
+    // 🟢 监听浏览器/系统侧滑触发的历史变动
     window.addEventListener('popstate', (e) => {
-        log(`Popstate: hash=${location.hash}`);
-        handleCustomBack();
-        safePush(null, null, '#home');
+        log(`Popstate: ${location.hash}`);
+        
+        // 如果 Hash 变空了，说明用户试图“退到底”
+        if (!location.hash || location.hash === '#') {
+             handleRouterBack();
+        } else {
+             // 可能是正常的 Hash 跳转，不做干扰
+        }
     });
 
-    // === 🟢 修复后的手势监听 ===
-    function setupEdgeSwipe() {
-        const edge = document.getElementById('edge-swipe-handler');
-        let startX = 0, startY = 0;
-        
-        edge.addEventListener('touchstart', e => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            log('Edge start');
-        }, {passive: false});
-
-        // 🟢 关键：拦截系统手势
-        edge.addEventListener('touchmove', e => {
-            if (e.cancelable) e.preventDefault(); 
-        }, {passive: false});
-
-        edge.addEventListener('touchend', e => {
-            const endX = e.changedTouches[0].clientX;
-            const endY = e.changedTouches[0].clientY;
-            const diffX = endX - startX;
-            const diffY = Math.abs(endY - startY);
-            
-            log(`Edge end: dx=${diffX}`);
-
-            if (diffX > 50 && diffY < 50) {
-                if (e.cancelable) e.preventDefault(); 
-                
-                if (currentMode !== 'grid' || historyStack.length > 0) {
-                    log('Edge swipe valid -> Back');
-                    handleCustomBack();
-                } else {
-                    log('Edge swipe ignored at root');
-                }
-            }
-        }, {passive: false});
-        
-        edge.addEventListener('touchcancel', () => log('Edge touch canceled'));
+    // 按钮点击返回
+    function goBack() { 
+        log("Btn Back");
+        // 调用 history.back() 会触发 popstate，从而复用上面的逻辑
+        window.history.back(); 
     }
-
-    function goBack() { handleCustomBack(); }
 
     async function initData() {
       let data = null;
       if (typeof LOCAL_DATA !== 'undefined') {
         data = parseData(LOCAL_DATA);
         updateBadge('OFFLINE', LOCAL_DATA.version);
-        log('Loaded local data');
-      } else {
-        log('WARN: LOCAL_DATA undefined');
+        log("Local Data OK");
       }
 
       try {
-        log('Checking online...');
+        log("Checking Online...");
         const res = await fetch(CDN_ROOT + 'data.js?t=' + Date.now());
         if (res.ok) {
           const txt = await res.text();
@@ -418,26 +378,25 @@
           if (remoteData) {
             const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version || 0) : 0;
             const remoteVer = Number(remoteData.version || 0);
-            log(`Ver: local=${localVer}, remote=${remoteVer}`);
             
             if (remoteVer > localVer) {
               useOnline = true;
               data = parseData(remoteData);
               updateBadge('NEW', remoteVer);
-              log('Switched to online data');
+              log("Updated to Online Data");
             } else {
               updateBadge('LATEST', localVer);
             }
           }
         }
-      } catch(e) { console.log('Offline'); log('Online check failed'); }
+      } catch(e) { log("Online Check Failed"); }
 
       if (data) {
         renderSidebar(data);
         renderGrid(data);
       } else {
-        log('NO DATA found!');
-        document.getElementById('grid-view').innerHTML = '<div style="padding:40px;text-align:center;color:#999">暂无数据 (请检查 data.js)</div>';
+        log("No Data Found");
+        document.getElementById('grid-view').innerHTML = '<div style="padding:40px;text-align:center;color:#999">暂无数据</div>';
         switchView('grid-view');
       }
     }
@@ -458,7 +417,6 @@
       return path.split('/').map(encodeURIComponent).join('/');
     }
 
-    // === 渲染 ===
     function getTypeStyle(name, isFolder) {
       if (isFolder) return { icon: '#icon-folder', color: '#f59e0b', bg: '#fef3c7' };
       const n = (name || '').toLowerCase();
@@ -543,14 +501,15 @@
     }
 
     function enterFolder(parent, children) {
-      safePush(null, null, '#folder');
+      // 显式改变 Hash
+      window.location.hash = "#folder";
       historyStack.push(parent);
       renderGrid(children);
     }
 
     function openFile(path, title) {
       if (!path) return;
-      safePush(null, null, '#reader');
+      window.location.hash = "#reader";
       currentMode = 'reader';
       document.getElementById('page-title').innerText = title;
       document.getElementById('back-btn').style.display = 'flex';
@@ -593,7 +552,6 @@
       }
     }
 
-    // === PDF 逻辑 ===
     async function renderPdf(url) {
       currentMode = 'pdf';
       switchView('pdf-view');
@@ -686,7 +644,7 @@
         const baseVp = page.getViewport({ scale: 1 });
         const fitScale = containerW / baseVp.width;
 
-        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const dpr = Math.max(window.devicePixelRatio || 1, 2.0);
         const outputScale = fitScale * dpr;
 
         const viewport = page.getViewport({ scale: fitScale });
@@ -853,10 +811,12 @@
       document.getElementById('page-title').innerText = historyStack.length > 0 ? '文件夹' : '知识库首页';
       if (historyStack.length === 0) document.getElementById('back-btn').style.display = 'none';
       
-      safePush(null, null, '#home');
+      // 退出阅读器时，确保回到 #folder 状态（或 #home 如果栈空了）
+      const targetHash = historyStack.length > 0 ? '#folder' : '#home';
+      // 避免 pushState 堆叠，用 replace
+      window.history.replaceState(null, null, targetHash);
     }
 
-    // 🟢 按钮缩放
     window.zoomPdf = function(delta) {
       const newScale = Math.max(0.5, Math.min(4.0, currentScale + delta));
       const scrollEl = document.getElementById('pdf-scroll');
