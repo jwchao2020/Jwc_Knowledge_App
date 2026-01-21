@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Jwc 知识库 (Debug)</title>
+  <title>Jwc 知识库 (Fixed)</title>
   <meta name="theme-color" content="#ffffff" />
 
   <script src="lib/pdfjs/pdf.min.js"></script>
@@ -36,7 +36,7 @@
       height: 100vh;
       overflow: hidden;
       display: flex;
-      overscroll-behavior-x: none; 
+      overscroll-behavior: none; /* 禁止全局橡皮筋 */
     }
 
     .svg-icon { width: 20px; height: 20px; fill: currentColor; transition: transform 0.2s; vertical-align: text-bottom; }
@@ -133,11 +133,16 @@
 
     /* PDF 容器 */
     #pdf-view { background: #525659; }
-    #pdf-scroll { flex: 1; overflow: auto; padding: 20px 0; text-align: center; -webkit-overflow-scrolling: touch; }
+    /* ✅ 允许双指缩放，但禁止浏览器默认手势，交给JS */
+    #pdf-scroll { 
+      flex: 1; overflow: auto; padding: 20px 0; text-align: center; 
+      -webkit-overflow-scrolling: touch; 
+      touch-action: pan-x pan-y; /* 允许滚动 */
+    }
     .pdf-page-canvas { display: block; width: 100%; height: auto; }
     .pdf-page-container { margin: 0 auto 15px; position: relative; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-height: 200px; }
 
-    /* FAB (左下角) */
+    /* FAB */
     #fab-menu {
       position: fixed; bottom: 24px; left: 24px;
       width: 50px; height: 50px;
@@ -148,7 +153,7 @@
     }
     #fab-menu:active { transform: scale(0.9); }
 
-    /* Toast 提示 */
+    /* Toast */
     #toast {
       position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
       background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px;
@@ -161,18 +166,20 @@
       z-index: 100; color: var(--primary);
     }
 
-    /* 🟢 左侧手势感应区 (隐形) - 红色半透明用于调试(debug时可见, 正式版改回transparent) */
+    /* 🟢 左侧手势感应区 */
     #edge-swipe-handler {
-        position: fixed; top: 0; left: 0; width: 40px; height: 100%;
-        z-index: 9999; background: transparent; /* debug: rgba(255,0,0,0.2) */
+        position: fixed; top: 0; left: 0; width: 50px; height: 100%;
+        z-index: 9999; 
+        background: rgba(0,0,0,0.01); /* 极微弱背景确保接收事件 */
+        touch-action: none; /* 🚀 关键：禁止系统手势/浏览器后退，强制 JS 接管 */
     }
 
-    /* 🔴 调试控制台 (屏幕底部) */
+    /* 🔴 调试控制台 */
     #debug-console {
         position: fixed; bottom: 0; left: 0; width: 100%; height: 120px;
         background: rgba(0,0,0,0.8); color: #0f0; font-family: monospace; font-size: 10px;
         z-index: 10000; overflow-y: auto; padding: 5px; pointer-events: none;
-        display: none; /* 默认隐藏，需要调试时打开 */
+        display: none; 
     }
 
     @media (max-width: 768px) {
@@ -182,7 +189,6 @@
       #overlay.show { display: block; }
       #grid-view.list-mode .card-meta { display: none; }
       #fab-menu.visible { display: flex; }
-      /* 手机端默认开启 debug 面板 (如果需要) */
       #debug-console { display: block; } 
     }
   </style>
@@ -196,10 +202,7 @@
     <symbol id="icon-back" viewBox="0 0 24 24"><path d="M20,11H7.83l5.59-5.59L12,4l-8,8l8,8l1.41-1.41L7.83,13H20V11z" fill="currentColor"/></symbol>
   </svg>
 
-  <!-- 🟢 专门的手势感应层 -->
   <div id="edge-swipe-handler"></div>
-
-  <!-- 🟢 调试日志面板 -->
   <div id="debug-console"></div>
 
   <div id="sidebar">
@@ -261,7 +264,6 @@
   <script src="data.js"></script>
 
   <script>
-    // === 🟢 调试工具 ===
     function log(msg) {
         console.log(msg);
         const el = document.getElementById('debug-console');
@@ -271,7 +273,6 @@
         if (el.children.length > 20) el.lastChild.remove();
     }
 
-    // === 配置 ===
     const USER = 'jwchao2020';
     const REPO = 'Jwc_Knowledge_App';
     const BRANCH = 'gh-pages';
@@ -283,14 +284,12 @@
     let currentMode = 'grid';
     let lastBackTime = 0;
 
-    // PDF 状态
     let currentPdfDoc = null;
     let currentPdfUrl = '';
     let pdfLoadingTask = null;
     let pdfRenderSeq = 0;
     let pdfIntersectionObserver = null;
 
-    // Pinch 状态
     let pinchState = null;
     let pinchRaf = 0;
     let pendingPdfScroll = null;
@@ -300,95 +299,71 @@
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdfjs/pdf.worker.min.js';
     }
 
-    // === 🛡️ 安全 History 操作 (修复 SecurityError) ===
     function safePush(state, title, url) {
         try { history.pushState(state, title, url); } 
-        catch(e) { log('Push err: ' + e.message); try { history.pushState(state, title); } catch(e2){} }
+        catch(e) { try { history.pushState(state, title); } catch(e2){} }
     }
     function safeReplace(state, title, url) {
         try { history.replaceState(state, title, url); } 
-        catch(e) { log('Rep err: ' + e.message); try { history.replaceState(state, title); } catch(e2){} }
+        catch(e) { try { history.replaceState(state, title); } catch(e2){} }
     }
 
-    // === 🛠️ 启动逻辑 ===
     function initApp() {
         log('App init starting...');
         
-        // 1. 初始化历史垫片
         safeReplace({ mode: 'root' }, null); 
         safePush({ mode: 'home' }, null, '#home');
-        log('History shim injected.');
-
-        // 2. 🟢 启动手动侧滑监听
+        
         setupEdgeSwipe();
 
-        // 3. Capacitor 原生拦截
         if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App) {
-            log('Capacitor detected, binding backButton.');
             Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
-                log('Native Back Pressed');
                 handleCustomBack();
             });
-        } else {
-            log('No Capacitor, running in Browser mode.');
         }
         
-        // 4. PDF 手势
         setupPdfGestures();
-
         initData();
     }
 
-    // === 🟢 核心返回逻辑 (统一入口) ===
     function handleCustomBack() {
         log(`handleBack: mode=${currentMode}, stack=${historyStack.length}`);
 
-        // A. 正在阅读 -> 关闭
         if (currentMode !== 'grid') {
             closeReader();
             return;
         }
-        // B. 在子目录 -> 返回上一级
         if (historyStack.length > 0) {
             const parent = historyStack.pop();
             renderGrid(parent);
             return;
         }
-        // C. 在根目录 -> 双击退出
+        
         const now = Date.now();
         if (now - lastBackTime < 2000) {
-            log('Exit App Triggered');
             if (window.Capacitor) Capacitor.Plugins.App.exitApp();
         } else {
             lastBackTime = now;
             showToast();
-            log('Toast shown, waiting for double press');
-            // 补回垫片，防止系统接管退出
-            if (location.hash !== '#home') {
-                 safePush(null, null, '#home');
-            }
+            if (location.hash !== '#home') safePush(null, null, '#home');
         }
     }
 
-    // 监听浏览器回退 (处理系统侧滑触发的 popstate)
     window.addEventListener('popstate', (e) => {
-        log(`Popstate event: hash=${location.hash}`);
         handleCustomBack();
-        // 无论如何，强制恢复到 #home 状态，保持 JS 接管
         safePush(null, null, '#home');
     });
 
-    // === 🟢 手动侧滑监听 (穿透所有层) ===
+    // 🟢 修复后的手势监听
     function setupEdgeSwipe() {
         const edge = document.getElementById('edge-swipe-handler');
         let startX = 0, startY = 0;
         
-        // 使用 passive: false 允许 preventDefault
         edge.addEventListener('touchstart', e => {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
-            log('Edge touch start');
-        }, {passive: false});
+            log('Edge start');
+        }, {passive: false}); // 必须是 false 才能 preventDefault
 
         edge.addEventListener('touchend', e => {
             const endX = e.changedTouches[0].clientX;
@@ -396,40 +371,30 @@
             const diffX = endX - startX;
             const diffY = Math.abs(endY - startY);
             
-            log(`Edge touch end: dx=${diffX}, dy=${diffY}`);
+            log(`Edge end: dx=${diffX}, dy=${diffY}`);
 
-            // 逻辑：向右滑 > 50px，且垂直偏移 < 50px
             if (diffX > 50 && diffY < 50) {
-                // 阻止默认行为（如系统级侧滑）
-                if (e.cancelable) e.preventDefault();
+                if (e.cancelable) e.preventDefault(); // 拦截系统手势
                 
-                // 只有不在根目录时才触发，防止首页误触退出提示
                 if (currentMode !== 'grid' || historyStack.length > 0) {
-                    log('Edge swipe valid -> Back');
                     handleCustomBack();
                 } else {
-                    log('Edge swipe ignored at root');
+                    log('Root ignore');
                 }
             }
         }, {passive: false});
     }
 
-    // 按钮调用的返回
-    function goBack() { 
-        handleCustomBack();
-    }
+    function goBack() { handleCustomBack(); }
 
-    // === 数据逻辑 ===
     async function initData() {
       let data = null;
       if (typeof LOCAL_DATA !== 'undefined') {
         data = parseData(LOCAL_DATA);
         updateBadge('OFFLINE', LOCAL_DATA.version);
-        log('Loaded local data');
       }
 
       try {
-        log('Checking online update...');
         const res = await fetch(CDN_ROOT + 'data.js?t=' + Date.now());
         if (res.ok) {
           const txt = await res.text();
@@ -437,19 +402,16 @@
           if (remoteData) {
             const localVer = (typeof LOCAL_DATA !== 'undefined') ? Number(LOCAL_DATA.version || 0) : 0;
             const remoteVer = Number(remoteData.version || 0);
-            log(`Ver check: local=${localVer}, remote=${remoteVer}`);
-            
             if (remoteVer > localVer) {
               useOnline = true;
               data = parseData(remoteData);
               updateBadge('NEW', remoteVer);
-              log('Switched to online data');
             } else {
               updateBadge('LATEST', localVer);
             }
           }
         }
-      } catch(e) { console.log('Offline'); log('Online check failed'); }
+      } catch(e) { log('Offline check failed'); }
 
       if (data) {
         renderSidebar(data);
@@ -473,7 +435,6 @@
       return path.split('/').map(encodeURIComponent).join('/');
     }
 
-    // === 渲染 ===
     function getTypeStyle(name, isFolder) {
       if (isFolder) return { icon: '#icon-folder', color: '#f59e0b', bg: '#fef3c7' };
       const n = (name || '').toLowerCase();
@@ -604,330 +565,4 @@
         container.innerHTML = html;
         if (window.MathJax) MathJax.typesetPromise([container]);
       } catch (e) {
-        container.innerHTML = `<div style="color:red;text-align:center;padding:20px">${e.message}</div>`;
-      }
-    }
-
-    // === PDF 逻辑 ===
-    async function renderPdf(url) {
-      currentMode = 'pdf';
-      switchView('pdf-view');
-      document.getElementById('reader-tools').style.display = 'flex';
-      document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-      
-      cleanupPdf();
-
-      const mySeq = ++pdfRenderSeq;
-      currentPdfUrl = url;
-
-      const container = document.getElementById('pdf-container');
-      const loading = document.getElementById('loading');
-      loading.style.display = 'flex';
-      document.getElementById('loading-text').innerText = '加载中...';
-
-      try {
-        pdfLoadingTask = pdfjsLib.getDocument(url);
-        pdfLoadingTask.onProgress = (p) => {
-          if (mySeq !== pdfRenderSeq) return;
-          const percent = Math.round((p.loaded / p.total) * 100);
-          if (!isNaN(percent)) document.getElementById('loading-text').innerText = `加载 ${percent}%`;
-        };
-
-        const pdf = await pdfLoadingTask.promise;
-        if (mySeq !== pdfRenderSeq) return;
-
-        currentPdfDoc = pdf;
-        document.getElementById('loading-text').innerText = '渲染中...';
-
-        await buildPdfLayout(pdf, mySeq);
-        loading.style.display = 'none';
-
-      } catch (e) {
-        if (mySeq === pdfRenderSeq) {
-          loading.style.display = 'none';
-          alert("无法打开 PDF: " + e.message);
-        }
-      }
-    }
-
-    async function buildPdfLayout(pdf, seq) {
-      const container = document.getElementById('pdf-container');
-      const scrollEl = document.getElementById('pdf-scroll');
-      const clientW = scrollEl.clientWidth - 40;
-
-      const firstPage = await pdf.getPage(1);
-      if (seq !== pdfRenderSeq) return;
-
-      const firstVp = firstPage.getViewport({ scale: 1 });
-      const pageAspect = firstVp.height / firstVp.width;
-
-      pdfIntersectionObserver = new IntersectionObserver((entries) => {
-        if (seq !== pdfRenderSeq || currentMode !== 'pdf') return;
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const div = entry.target;
-            if (!div.dataset.loaded) {
-              renderPageInDiv(pdf, parseInt(div.dataset.page), div, seq);
-              div.dataset.loaded = 'true';
-            }
-          }
-        });
-      }, { root: scrollEl, rootMargin: '500px' });
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const div = document.createElement('div');
-        div.className = 'pdf-page-container';
-        div.dataset.page = i;
-        div.style.width = (clientW * currentScale) + 'px';
-        div.style.height = (clientW * pageAspect * currentScale) + 'px';
-        container.appendChild(div);
-        pdfIntersectionObserver.observe(div);
-      }
-
-      if (pendingPdfScroll) {
-        scrollEl.scrollTop = pendingPdfScroll.top;
-        scrollEl.scrollLeft = pendingPdfScroll.left;
-        pendingPdfScroll = null;
-      }
-    }
-
-    async function renderPageInDiv(pdf, num, div, seq) {
-      if (seq !== pdfRenderSeq) return;
-      try {
-        const page = await pdf.getPage(num);
-        const scrollEl = document.getElementById('pdf-scroll');
-        const containerW = div.clientWidth || (scrollEl.clientWidth - 40) || 300;
-
-        const baseVp = page.getViewport({ scale: 1 });
-        const fitScale = containerW / baseVp.width;
-
-        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-        const outputScale = fitScale * dpr;
-
-        const viewport = page.getViewport({ scale: fitScale });
-        const renderViewport = page.getViewport({ scale: outputScale });
-
-        const canvas = document.createElement('canvas');
-        canvas.className = 'pdf-page-canvas';
-        const ctx = canvas.getContext('2d');
-
-        canvas.width = Math.floor(renderViewport.width);
-        canvas.height = Math.floor(renderViewport.height);
-        canvas.style.width = `${viewport.width}px`;
-        canvas.style.height = `${viewport.height}px`;
-
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        div.innerHTML = '';
-        div.style.height = '';
-        div.appendChild(canvas);
-
-        await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
-      } catch (e) {}
-    }
-
-    // === Pinch 手势 ===
-    function setupPdfGestures() {
-      const scrollEl = document.getElementById('pdf-scroll');
-      if (!scrollEl) return;
-      if (!('PointerEvent' in window)) return;
-
-      const pointers = new Map();
-      let isPinching = false;
-
-      scrollEl.addEventListener('pointerdown', (e) => {
-        if (currentMode !== 'pdf' || !currentPdfDoc) return;
-        if (e.pointerType !== 'touch') return;
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-        try { scrollEl.setPointerCapture(e.pointerId); } catch {}
-        if (pointers.size === 2) {
-          isPinching = true;
-          const [p1, p2] = [...pointers.values()];
-          const rect = scrollEl.getBoundingClientRect();
-          const centerX = (p1.x + p2.x) / 2 - rect.left;
-          const centerY = (p1.y + p2.y) / 2 - rect.top;
-          
-          pinchState = {
-            startDist: Math.hypot(p1.x - p2.x, p1.y - p2.y),
-            startScale: currentScale,
-            startScrollTop: scrollEl.scrollTop,
-            startScrollLeft: scrollEl.scrollLeft,
-            anchorX: centerX + scrollEl.scrollLeft,
-            anchorY: centerY + scrollEl.scrollTop,
-            clientCenterX: centerX,
-            clientCenterY: centerY,
-            lastScale: currentScale
-          };
-        }
-      }, { passive: true });
-
-      scrollEl.addEventListener('pointermove', (e) => {
-        if (!pointers.has(e.pointerId)) return;
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-        if (!isPinching || !pinchState || pointers.size !== 2) return;
-
-        const [p1, p2] = [...pointers.values()];
-        const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-        if (pinchState.startDist < 1) return;
-
-        const nextScale = Math.max(0.5, Math.min(4.0, pinchState.startScale * (dist / pinchState.startDist)));
-        
-        if (!pinchRaf) {
-          pinchRaf = requestAnimationFrame(() => {
-            applyPreview(nextScale);
-            pinchRaf = 0;
-          });
-        }
-        e.preventDefault();
-      }, { passive: false });
-
-      function endPointer(e) {
-        if (pointers.has(e.pointerId)) pointers.delete(e.pointerId);
-        if (isPinching && pointers.size < 2) {
-          commitPinch();
-          isPinching = false;
-        }
-      }
-      scrollEl.addEventListener('pointerup', endPointer, { passive: true });
-      scrollEl.addEventListener('pointercancel', endPointer, { passive: true });
-    }
-
-    function applyPreview(newScale) {
-      const container = document.getElementById('pdf-container');
-      const scrollEl = document.getElementById('pdf-scroll');
-      const ratio = newScale / pinchState.startScale;
-
-      container.style.transformOrigin = '0 0';
-      container.style.transform = `scale(${ratio})`;
-
-      scrollEl.scrollTop = (pinchState.anchorY * ratio) - pinchState.clientCenterY;
-      scrollEl.scrollLeft = (pinchState.anchorX * ratio) - pinchState.clientCenterX;
-
-      pinchState.lastScale = newScale;
-      document.getElementById('zoom-val').innerText = Math.round(newScale * 100) + '%';
-    }
-
-    function commitPinch() {
-      if (!pinchState) return;
-      commitZoomTo(pinchState.lastScale, pinchState);
-    }
-
-    function commitZoomTo(nextScale, state) {
-      const container = document.getElementById('pdf-container');
-      const scrollEl = document.getElementById('pdf-scroll');
-      
-      const finalScale = Math.max(0.5, Math.min(4.0, nextScale || currentScale));
-      const ratio = finalScale / state.startScale;
-      
-      pendingPdfScroll = { 
-        top: (state.anchorY * ratio) - state.clientCenterY, 
-        left: (state.anchorX * ratio) - state.clientCenterX
-      };
-
-      container.style.transform = '';
-      container.style.transformOrigin = '';
-      
-      currentScale = finalScale;
-      document.getElementById('zoom-val').innerText = Math.round(currentScale * 100) + '%';
-      
-      pinchState = null;
-      
-      cleanupPdf(); 
-      rebuildPdfLayout();
-    }
-
-    function rebuildPdfLayout() {
-      if (!currentPdfDoc || !currentPdfUrl) return;
-      const mySeq = ++pdfRenderSeq;
-      clearPdfViewOnly();
-      buildPdfLayout(currentPdfDoc, mySeq);
-    }
-
-    function clearPdfViewOnly() {
-      if (pdfIntersectionObserver) { pdfIntersectionObserver.disconnect(); pdfIntersectionObserver = null; }
-      const c = document.getElementById('pdf-container');
-      if (c) {
-        c.innerHTML = '';
-        c.style.transform = '';
-      }
-    }
-
-    function cleanupPdf() {
-      clearPdfViewOnly();
-      if (pdfLoadingTask) { try { pdfLoadingTask.destroy(); } catch {} pdfLoadingTask = null; }
-      if (currentPdfDoc) { try { currentPdfDoc.destroy(); } catch {} currentPdfDoc = null; }
-    }
-
-    function closeReader(isSystemBack) {
-      currentMode = 'grid';
-      switchView('grid-view');
-      pdfRenderSeq++; 
-      cleanupPdf();
-      document.getElementById('html-content').innerHTML = '';
-      document.getElementById('page-title').innerText = historyStack.length > 0 ? '文件夹' : '知识库首页';
-      if (historyStack.length === 0) document.getElementById('back-btn').style.display = 'none';
-      
-      // 保持 Hash 状态
-      safePush(null, null, '#home');
-    }
-
-    window.zoomPdf = function(delta) {
-      const newScale = Math.max(0.5, Math.min(4.0, currentScale + delta));
-      const scrollEl = document.getElementById('pdf-scroll');
-      const rect = scrollEl.getBoundingClientRect();
-      
-      const pinchSim = {
-           startScale: currentScale,
-           startScrollTop: scrollEl.scrollTop,
-           startScrollLeft: scrollEl.scrollLeft,
-           anchorX: rect.width/2 + scrollEl.scrollLeft,
-           anchorY: rect.height/2 + scrollEl.scrollTop,
-           clientCenterX: rect.width/2,
-           clientCenterY: rect.height/2
-      };
-      commitZoomTo(newScale, pinchSim);
-    }
-
-    function switchView(id) {
-      ['grid-view', 'html-view', 'pdf-view'].forEach(v => {
-        const el = document.getElementById(v);
-        if (v !== id) {
-          el.style.display = 'none';
-          return;
-        }
-        if (v === 'grid-view') {
-          el.style.display = ''; 
-        } else {
-          el.style.display = 'flex';
-        }
-      });
-      document.getElementById('reader-tools').style.display = (id === 'pdf-view') ? 'flex' : 'none';
-      const fab = document.getElementById('fab-menu');
-      if (id === 'grid-view') fab.classList.add('visible'); else fab.classList.remove('visible');
-    }
-
-    window.toggleSidebar = function() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('overlay');
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('show');
-    }
-
-    function showToast() {
-      const t = document.getElementById('toast');
-      t.style.display = 'block';
-      setTimeout(() => t.style.display = 'none', 2000);
-    }
-
-    function updateBadge(status, ver) {
-      const el = document.getElementById('version-badge');
-      let text = status === 'NEW' || status === 'LATEST' ? 'ONLINE' : 'OFFLINE';
-      el.innerText = `${text} v${(ver||'').toString().slice(-4)}`;
-      el.className = `version-badge ${status === 'NEW' || status === 'LATEST' ? 'online' : ''}`;
-    }
-
-    initApp();
-  </script>
-</body>
-</html>
+        container.innerHTML = `<div style="color:red;text-align:center;padding:20px">${e.message}</div>
